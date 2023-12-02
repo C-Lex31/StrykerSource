@@ -25,6 +25,10 @@ public:
 	UFUNCTION(Client ,Reliable)
 	void SetHealth(float Health, float MaxHealth);
 	UFUNCTION(Client ,Reliable)
+	void SetScoreAmount(float Score);
+	UFUNCTION(Client ,Reliable)
+	void SetDeathCount(float Deaths);
+	UFUNCTION(Client ,Reliable)
 	void InitializeGameHUD();
 	virtual void OnPossess(APawn* InPawn) override;
 	FORCEINLINE UCharacterOverlay* GetGameHUD() { return PlayerOverlay; }

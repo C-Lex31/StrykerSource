@@ -20,4 +20,13 @@ public:
 	class UTextBlock* HealthText;
 	UPROPERTY(meta=(BindWidget))
 	class UCrosshair* ObstacleCrosshair;
+	UPROPERTY(meta=(BindWidget))
+    UTextBlock* ScoreText;
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* ScoreAmount;
+	UPROPERTY(meta=(BindWidget))
+    UTextBlock* DeathsText;
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* DeathCount;
+	
 };

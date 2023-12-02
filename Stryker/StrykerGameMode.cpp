@@ -6,6 +6,7 @@
 #include "Stryker/PlayerController/StrykerPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
+#include "Stryker/PlayerState/StrykerPlayerState.h"
 
 AStrykerGameMode::AStrykerGameMode()
 {
@@ -19,7 +20,19 @@ AStrykerGameMode::AStrykerGameMode()
 
 void AStrykerGameMode::PlayerEliminated(AStrykerCharacter* EliminatedPlayer, AStrykerPlayerController* PC_Victim, AStrykerPlayerController* PC_Attacker)
 {
-	EliminatedPlayer->ServerEliminated();
+	AStrykerPlayerState* AttackerPS = PC_Attacker ? Cast<AStrykerPlayerState>(PC_Attacker->PlayerState) : nullptr;
+	AStrykerPlayerState* VictimPS = PC_Victim ? Cast<AStrykerPlayerState>(PC_Victim->PlayerState) : nullptr;
+
+	if (AttackerPS && AttackerPS != VictimPS)
+	{
+		AttackerPS->AddToScore(1.f);
+	}
+	if (VictimPS)
+	{
+		VictimPS->AddToDeaths(1);
+	}
+	if(EliminatedPlayer)
+		EliminatedPlayer->ServerEliminated();
 }
 
 void AStrykerGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)

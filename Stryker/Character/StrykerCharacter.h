@@ -16,15 +16,24 @@ class AStrykerCharacter : public ACharacter ,public ICrosshairInteractableInterf
 {
 	GENERATED_BODY()
 
-	/** Camera boom positioning the camera behind the character */
+	#pragma region Components
+/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UWeaponComponent* WeaponComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* OverheadWidget;
+#pragma endregion Components
 	
-	/** MappingContext */
+	#pragma region Inputs
+/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
 
@@ -50,81 +59,101 @@ class AStrykerCharacter : public ACharacter ,public ICrosshairInteractableInterf
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* FireAction;
+#pragma endregion Inputs
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UWidgetComponent* OverheadWidget;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="UI", meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<UUserWidget>CrosshairClass;
+	
+	
 
-	UPROPERTY(EditAnywhere, Category = Combat)
+    #pragma region Animation
+    UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitReactMontage;
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* EliminationMontage;
+#pragma endregion Animation
 
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappedWeapon)
 	class AWeaponBase* OverlappedWeapon;
 	
-	UFUNCTION()
-	void OnRep_OverlappedWeapon(AWeaponBase* LastWeapon);
-	UFUNCTION(Server , Reliable)
-	void ServerEquip();
-	//Hides Player when too close to camera
-	void OccludeCharacter();
+	
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="UI", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UUserWidget>CrosshairClass;
 
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 100.f;
+
 	UPROPERTY(EditAnywhere,  Category = Debug)
 	float CrossObstacleTraceLength=200.f;
-	FVector CameraTraceEndLocation;
+
+	FVector CameraTraceEndLocation{0.f};
+	FVector CrosshairLocation{0.F};
 	class UCrosshair* Crosshair;
-	FTimerHandle TH_CenterCrosshair;
-	FTimerHandle TH_EliminationTimer;
-
-	float AO_Yaw{ 0.f }, AO_Pitch{0.f};
 	float CrosshairSpreadScale{ 0.f }, CrosshairVelocityFactor{ 0.f }, CrosshairInAirFactor{ 0.f }, CrosshairAimFactor{ 0.f }, CrosshairShootingFactor{ 0.f };
-
 	bool bCrosshairHasObstacle{ false };
-	float InterpAO_Yaw{ 0.f };
+
+    #pragma region TimerHandles
+    FTimerHandle TH_CenterCrosshair;
+	FTimerHandle TH_EliminationTimer;
+#pragma endregion TimerHandles
+
+	float AO_Yaw{ 0.f }, AO_Pitch{0.f} , InterpAO_Yaw{ 0.f };
 	
 	FRotator StartingAimRotation;
 	ETurnInPlace TurningInPlace;
-	void TurnInPlace(float DeltaTime);
 
-	bool bEliminated = false;
-	void OnElimTimerFinished();
-	UPROPERTY(EditDefaultsOnly)
-	float RespawnDelay = 3.f;
-	/*
-		PlayerHealth
-	*/
-	float MaxHealth = 100.f;
+	void TurnInPlace(float DeltaTime);	
+	void OccludeCharacter();//Hides Player when too close to camera
+
+	UFUNCTION()
+	void OnRep_OverlappedWeapon(AWeaponBase* LastWeapon);
+
+	UFUNCTION(Server , Reliable)
+	void ServerEquip();
+	
+	#pragma region HealthAndElimination
+float MaxHealth = 100.f;
 	UPROPERTY(ReplicatedUsing=OnRep_Health ,VisibleAnywhere,Category="PlayerStats")
 	float Health = 100.f;
+
 	UFUNCTION()
 	void OnRep_Health();
 
+	bool bEliminated = false;
+	void OnElimTimerFinished();
+
+	UPROPERTY(EditDefaultsOnly)
+	float RespawnDelay = 3.f;
+
 	UPROPERTY(VisibleAnywhere)
 	UTimelineComponent* TL_Dissolve;
+
 	FOnTimelineFloat DissolveTrack;
+
 	UPROPERTY(EditAnywhere)
 	UCurveFloat* DissolveCurve;
+
 	UPROPERTY(VisibleAnywhere)
 	UMaterialInstanceDynamic* DynamicDissolveMaterial;
+
 	UPROPERTY(EditAnywhere)
 	UMaterialInstance* DissolveMaterial;
+
 	UFUNCTION()
 	void UpdateDissolveMaterial(float DissolveAmount);
+
 	void StartDissolve();
+#pragma endregion HealthAndElimination
 
 
 	class AStrykerPlayerController* PC ;
+	class AStrykerPlayerState* PS;
 	AStrykerPlayerController* LocalPC;
-	virtual void I_ClientHUD()override;
+
 public:
 	AStrykerCharacter();
-		UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UWeaponComponent* WeaponComponent;
-	/** Returns CameraBoom subobject **/                                        
+
+	#pragma region InlineGetters
+/** Returns CameraBoom subobject **/                                        
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
@@ -133,24 +162,48 @@ public:
 	FORCEINLINE ETurnInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool GetIsEliminated() const { return bEliminated; }
 	FORCEINLINE bool GetCrosshairHasObstacle() const { return bCrosshairHasObstacle; }
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
-	void SetOverlappingWeapon(AWeaponBase* Weapon);
-	virtual void PossessedBy(AController* NewController) override;
-	//UFUNCTION(NetMulticast, Unreliable)
-	void PlayHitReactMontage();
-	//UFUNCTION(NetMulticast, Unreliable)
-	//void MulticastHit();
+#pragma endregion InlineGetters
 
-	virtual void PostInitializeComponents() override;
+    #pragma region Getters
+
 	bool IsWeaponEquiped();
 	bool IsAiming();
 	AWeaponBase* GetEquippedWeapon();
 	FVector GetHitTarget() const;
-	void ServerEliminated();
+	FRotator GetShotStartLocAndRot();
+
+#pragma endregion Getters
+
+    #pragma region Elimination
+
+    void ServerEliminated();//Called from game mode
+
+	UFUNCTION(Client ,Reliable)
+	void Client_Eliminated();
+
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastEliminated();
-	void PlayEliminationMontage();
-	 FRotator GetShotStartLocAndRot();
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ElimBotEffect;
+
+	UPROPERTY(VisibleAnywhere)
+	UParticleSystemComponent* ElimBotComponent;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* ElimBotSound;
+
+#pragma endregion Elimination
+
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void PostInitializeComponents() override;
+	virtual void Destroyed() override;
+
+	void SetOverlappingWeapon(AWeaponBase* Weapon);
+	
+
+	
 protected:
 
 	/** Called for movement input */
@@ -166,16 +219,21 @@ protected:
 	void EventFireStart();
 	void EventFireStop();
 	void AimOffset(float DeltaTime);
-	UFUNCTION()
-	void ReceiveDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
-	void UpdateHUDHealth();
-	FVector TraceCameraAim();
-	UFUNCTION(Client , Reliable)
+	void PlayEliminationMontage();
+	void PlayHitReactMontage();
 	void CrosshairLogicUpdate();
 	void UpdateCrosshair(float DeltaTime);
+	void CenterCrosshair();
+	void UpdateHUDHealth();
+
+	FVector TraceCameraAim();
+	
 	UFUNCTION(Client ,Reliable)
 	void InitializeCrosshair();
-	void CenterCrosshair();
+
+	UFUNCTION()
+	void ReceiveDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
 
 protected:
 	// APawn interface

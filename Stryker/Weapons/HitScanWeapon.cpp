@@ -44,7 +44,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 
 	   //	FVector CenterEnd = CenterStart + CrosshairWorldDirection * 80000.f;
 		//	FVector End = Start + UKismetMathLibrary::GetForwardVector(HitTarget) * 80000.f;
-		FVector Start = PlayerCharacter->GetCrosshairHasObstacle() ? SocketStart : CenterStart;
+		FVector Start = PlayerCharacter->GetCrosshairHasObstacle() ? SocketStart : SocketStart;
 		FVector End = Start + (HitTarget - Start) * 1.25f;
 		// End = PlayerCharacter->GetCrosshairHasObstacle() ? CenterEnd : CenterEnd;
 

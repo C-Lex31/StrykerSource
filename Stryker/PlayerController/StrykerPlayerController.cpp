@@ -48,6 +48,34 @@ void AStrykerPlayerController::InitializeGameHUD_Implementation()
 		PlayerOverlay->AddToViewport();
 }
 
+void AStrykerPlayerController::SetScoreAmount_Implementation(float Score)
+{
+	bool bHUDValid =
+		PlayerOverlay &&
+		PlayerOverlay->ScoreText &&
+		PlayerOverlay->ScoreAmount;
+
+	if (bHUDValid)
+	{
+		FString ScoreString = FString::Printf(TEXT("%d"), FMath::FloorToInt(Score));
+		PlayerOverlay->ScoreAmount->SetText(FText::FromString(ScoreString));
+	}
+}
+
+void AStrykerPlayerController::SetDeathCount_Implementation(float Deaths)
+{
+	bool bHUDValid =
+		PlayerOverlay &&
+		PlayerOverlay->DeathsText &&
+		PlayerOverlay->DeathCount;
+
+	if (bHUDValid)
+	{
+		FString DeathsString = FString::Printf(TEXT("%d"), FMath::FloorToInt(Deaths));
+		PlayerOverlay->DeathCount->SetText(FText::FromString(DeathsString));
+	}
+}
+
 void AStrykerPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
