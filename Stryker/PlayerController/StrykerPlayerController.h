@@ -29,6 +29,10 @@ public:
 	UFUNCTION(Client ,Reliable)
 	void SetDeathCount(float Deaths);
 	UFUNCTION(Client ,Reliable)
+	void SetWeaponAmmo(int32 Ammo);
+	UFUNCTION(Client ,Reliable)
+	void SetCarriedAmmo(int32 CarriedAmmo);
+	UFUNCTION(Client ,Reliable)
 	void InitializeGameHUD();
 	virtual void OnPossess(APawn* InPawn) override;
 	FORCEINLINE UCharacterOverlay* GetGameHUD() { return PlayerOverlay; }

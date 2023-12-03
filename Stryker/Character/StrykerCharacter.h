@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "Stryker/Types/TurnInPlace.h"
+#include "Stryker/Enumerations/TurnInPlace.h"
 #include "Stryker/Interfaces/CrosshairInteractableInterface.h"
 #include "Stryker/Interfaces/PlayerControllerInterface.h"
 #include "Components/TimelineComponent.h"

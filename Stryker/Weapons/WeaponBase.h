@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Stryker/Enumerations/WeaponTypes.h"
 #include "WeaponBase.generated.h"
 
 UENUM(BlueprintType)
@@ -25,13 +26,15 @@ public:
 	AWeaponBase();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+	virtual void OnRep_Owner() override;
 	virtual void Fire(const FVector& HitTarget);
 	void DropWeapon();
 	void ShowPickupWidget(bool bPickupWidget);
 	void SetWeaponState(EWeaponState State);
-
+	void SetHUDAmmo(); //Also called on server from weapon component
+	FORCEINLINE bool  GetIsEmpty() { return Ammo <= 0.f; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
-
+	FORCEINLINE EWeaponType GetWeaponType()const { return WeaponType; }
 	/**
 	* Textures for the weapon crosshairs
 	*/
@@ -65,8 +68,8 @@ public:
 	float FireDelay = .15f;
 	UPROPERTY(EditAnywhere, Category = Combat)
 	bool bAutomatic = true;
-	void SetPlayerRef (class AStrykerCharacter* PlayerRef);
-	FORCEINLINE AStrykerCharacter* GetPlayerRef() { return PlayerCharacter; }
+	//void SetPlayerRef (class AStrykerCharacter* PlayerRef);
+	//FORCEINLINE AStrykerCharacter* GetPlayerRef() { return PlayerCharacter; }
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -86,7 +89,7 @@ protected:
 		UPrimitiveComponent* OtherComponent,
 		int32 OtherBodyIndex
 		) ;
-	AStrykerCharacter* PlayerCharacter;
+	
 private:
 	UPROPERTY(VisibleAnywhere , Category="WeaponProperties")
 	 USkeletalMeshComponent* WeaponMesh;
@@ -101,5 +104,20 @@ private:
 	UPROPERTY(EditAnywhere , Category="WeaponProperties")
 	class UAnimationAsset* WeaponFireAnimation;
 	 
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
+	EWeaponType WeaponType;
+
+	class AStrykerCharacter* OwnerCharacter;
+	class AStrykerPlayerController* OwnerController;
 	
+	UPROPERTY(EditAnywhere, Replicated)
+	int32 Ammo;
+
+	//UFUNCTION()
+	//void OnRep_Ammo();
+
+	void SpendRound();
+
+	UPROPERTY(EditAnywhere)
+	int32 MagCapacity;
 };

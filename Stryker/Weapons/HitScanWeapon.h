@@ -18,7 +18,7 @@ class STRYKER_API AHitScanWeapon : public AWeaponBase
 	class UParticleSystem* ImpactParticles;
 	//UPROPERTY(EditAnywhere)
 	//class UWeaponComponent*  WeaponComponent;
-
+	class AStrykerCharacter* PlayerCharacter ;
 	UPROPERTY(EditAnywhere)
 	float Damage = 20.f;
 public:

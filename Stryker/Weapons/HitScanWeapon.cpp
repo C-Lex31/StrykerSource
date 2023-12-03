@@ -15,9 +15,9 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	APawn* OwnerPawn = Cast<APawn>(GetOwner()); //Owner is character 
 	if (OwnerPawn == nullptr) return;
 	AController* InstigatorController = OwnerPawn->GetController();
-
+	PlayerCharacter = PlayerCharacter == nullptr ? Cast<AStrykerCharacter>(OwnerPawn) : PlayerCharacter;
 	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("Muzzle");
-	if (MuzzleSocket )
+	if ( PlayerCharacter && MuzzleSocket )
 	{
 		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
 		FHitResult FireHit;

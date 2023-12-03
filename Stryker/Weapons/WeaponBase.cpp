@@ -7,6 +7,27 @@
 #include "Components/WidgetComponent.h "
 #include "Stryker/Character/StrykerCharacter.h"
 #include "Net/UnrealNetwork.h"
+#include "Stryker/PlayerController/StrykerPlayerController.h"
+
+void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps((OutLifetimeProps));
+	DOREPLIFETIME(AWeaponBase, WeaponState);
+	DOREPLIFETIME(AWeaponBase, Ammo);
+}
+void AWeaponBase::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	if (Owner == nullptr)
+	{
+		OwnerCharacter = nullptr;
+		OwnerController = nullptr;
+	}
+	else
+	{
+		SetHUDAmmo();
+	}
+}
 // Sets default values
 AWeaponBase::AWeaponBase()
 {
@@ -32,12 +53,14 @@ AWeaponBase::AWeaponBase()
 	PickupWidget->SetupAttachment(WeaponMesh);
 }
 
+#if 0
 void AWeaponBase::SetPlayerRef(AStrykerCharacter* PlayerRef)
 {
 	if (PlayerRef == nullptr)return;
 	
 	PlayerCharacter = PlayerRef;
 }
+#endif
 
 // Called when the game starts or when spawned
 void AWeaponBase::BeginPlay()
@@ -102,6 +125,27 @@ void AWeaponBase::OnRep_WeaponState()
 	}
 }
 
+void AWeaponBase::SetHUDAmmo()
+{
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AStrykerCharacter>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter)
+	{
+		OwnerController = OwnerController == nullptr ? Cast<AStrykerPlayerController>(OwnerCharacter->Controller) : OwnerController;
+		if (OwnerController)
+		{
+			OwnerController->SetWeaponAmmo(Ammo);
+		}
+	}
+}
+
+
+void AWeaponBase::SpendRound()
+{	
+	--Ammo;
+	FMath::Clamp(Ammo-1, 0.f, MagCapacity);
+	SetHUDAmmo();
+}
+
 
 // Called every frame
 void AWeaponBase::Tick(float DeltaTime)
@@ -110,11 +154,7 @@ void AWeaponBase::Tick(float DeltaTime)
 
 }
 
-void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps((OutLifetimeProps));
-	DOREPLIFETIME(AWeaponBase, WeaponState);
-}
+
 
 void AWeaponBase::ShowPickupWidget(bool bPickupWidget)
 {
@@ -159,6 +199,7 @@ void AWeaponBase::Fire(const FVector& HitTarget)
 	{
 		WeaponMesh->PlayAnimation(WeaponFireAnimation, false);
 	}
+	SpendRound();
 }
 
 void AWeaponBase::DropWeapon()
@@ -167,6 +208,8 @@ void AWeaponBase::DropWeapon()
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
+	OwnerCharacter = nullptr;
+	OwnerController =nullptr ;
 }
 
 

@@ -76,6 +76,33 @@ void AStrykerPlayerController::SetDeathCount_Implementation(float Deaths)
 	}
 }
 
+void AStrykerPlayerController::SetWeaponAmmo_Implementation(int32 Ammo)
+{
+	bool bHUDValid =
+		PlayerOverlay &&
+		PlayerOverlay->WeaponAmmoAmount;
+
+	if (bHUDValid)
+	{
+		FString WeaponAmmoString = FString::Printf(TEXT("%d"), Ammo);
+		PlayerOverlay->WeaponAmmoAmount->SetText(FText::FromString(WeaponAmmoString));
+	}
+}
+
+void AStrykerPlayerController::SetCarriedAmmo_Implementation(int32 CarriedAmmo)
+{
+
+	bool bHUDValid =
+		PlayerOverlay &&
+		PlayerOverlay->CarriedAmmoAmount;
+
+	if (bHUDValid)
+	{
+		FString CarriedAmmoString = FString::Printf(TEXT("%d"), CarriedAmmo);
+		PlayerOverlay->CarriedAmmoAmount->SetText(FText::FromString(CarriedAmmoString));
+	}
+}
+
 void AStrykerPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);

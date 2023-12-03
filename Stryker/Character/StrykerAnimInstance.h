@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "Stryker/Types/TurnInPlace.h"
+#include "Stryker/Enumerations/TurnInPlace.h"
 #include "StrykerAnimInstance.generated.h"
 
 /**

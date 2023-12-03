@@ -32,6 +32,11 @@ void UWeaponComponent::InterpFOV(float DeltaTime)
 }
 
 
+void UWeaponComponent::InitializeCarriedAmmo()
+{
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
+}
+
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
 {
@@ -55,6 +60,10 @@ void UWeaponComponent::BeginPlay()
 			DefaultFOV = PlayerCharacter->GetFollowCamera()->FieldOfView;
 			CurrentFOV = DefaultFOV;
 		}
+		if (PlayerCharacter->HasAuthority())
+		{
+			InitializeCarriedAmmo();
+		}
 	}
 	// ...
 
@@ -64,12 +73,17 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UWeaponComponent, EquippedWeapon);
 	DOREPLIFETIME(UWeaponComponent, bIsAiming);
+	DOREPLIFETIME_CONDITION(UWeaponComponent, CarriedAmmo, COND_OwnerOnly);
 }
 //CALLED ON SERVER from StrykerCharacter.cpp
 void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEqip)
 {
 	if (PlayerCharacter == nullptr || WeaponToEqip == nullptr) return;
 
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->DropWeapon();
+	}
 	EquippedWeapon = WeaponToEqip;
 	EquippedWeapon->SetWeaponState(EWeaponState::Equipped);
 	const USkeletalMeshSocket* HandSocket = (PlayerCharacter)->GetMesh()->GetSocketByName("RightHandSocket");
@@ -77,11 +91,18 @@ void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEqip)
 	{
 		HandSocket->AttachActor(EquippedWeapon, (Cast<ACharacter>(GetOwner()))->GetMesh());
 	 }
+
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+
 	EquippedWeapon->SetOwner(PlayerCharacter);
+	EquippedWeapon->SetHUDAmmo();
+	StrykerPlayerController = StrykerPlayerController == nullptr ? Cast<AStrykerPlayerController>(PlayerCharacter->Controller) : StrykerPlayerController;
+	if (StrykerPlayerController)
+		StrykerPlayerController->SetCarriedAmmo(CarriedAmmo);
 	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 	PlayerCharacter->bUseControllerRotationYaw = true;
 	
-	EquippedWeapon->SetPlayerRef(PlayerCharacter);
 }
 
 void UWeaponComponent::FireButtonPressed(bool bPressed)
@@ -134,7 +155,7 @@ void UWeaponComponent::FireTimerFinished()
 bool UWeaponComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;	
-	return bCanFire;
+	return !EquippedWeapon->GetIsEmpty() || !bCanFire;
 }
 
 
@@ -187,7 +208,7 @@ void UWeaponComponent::OnRep_EquipWeapon()
 		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 		PlayerCharacter->bUseControllerRotationYaw = true;
 		
-		EquippedWeapon->SetPlayerRef(PlayerCharacter);
+		//EquippedWeapon->SetPlayerRef(PlayerCharacter);
 	}
 }
 

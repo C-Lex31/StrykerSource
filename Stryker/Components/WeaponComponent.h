@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Stryker/UI/HUD/StrykerHUD.h"
+#include "Stryker/Enumerations/WeaponTypes.h"
 #include "WeaponComponent.generated.h"
 
 #define TRACE_LENGTH 80000.f
@@ -61,6 +62,17 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 	void StartFireTimer();
 	void FireTimerFinished();
 	bool CanFire();
+
+	// Carried ammo for the currently-equipped weapon
+	UPROPERTY(Replicated)
+	int32 CarriedAmmo;
+	TMap<EWeaponType, int32> CarriedAmmoMap;
+	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 500;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingARAmmo = 30;
+	void InitializeCarriedAmmo();
 public:	
 	// Sets default values for this component's properties
 	UWeaponComponent();
