@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Stryker/Weapons/WeaponBase.h "
+#include "Stryker/Enumerations/CombatState.h"
 void UStrykerAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
@@ -34,6 +35,7 @@ void UStrykerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	TurningInPlace = StrykerCharacter->GetTurningInPlace();
 	EquippedWeapon = StrykerCharacter->GetEquippedWeapon();
 	bEliminated = StrykerCharacter->GetIsEliminated();
+	bUseFABRIK = StrykerCharacter->GetCombatState()!= ECombatState::ECS_Reloading ;
 	// Offset Yaw for Strafing
 	FRotator AimRotation = StrykerCharacter->GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(StrykerCharacter->GetVelocity());

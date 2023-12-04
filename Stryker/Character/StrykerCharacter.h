@@ -5,9 +5,11 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "Stryker/Enumerations/TurnInPlace.h"
+#include "Stryker/Enumerations/CombatState.h"
 #include "Stryker/Interfaces/CrosshairInteractableInterface.h"
 #include "Stryker/Interfaces/PlayerControllerInterface.h"
 #include "Components/TimelineComponent.h"
+
 #include "StrykerCharacter.generated.h"
 
 
@@ -59,16 +61,23 @@ class AStrykerCharacter : public ACharacter ,public ICrosshairInteractableInterf
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* FireAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ReloadAction;
 #pragma endregion Inputs
 
 	
 	
 
     #pragma region Animation
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* FireWeaponMontage;
     UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitReactMontage;
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* EliminationMontage;
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* ReloadMontage;
 #pragma endregion Animation
 
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappedWeapon)
@@ -171,7 +180,7 @@ public:
 	AWeaponBase* GetEquippedWeapon();
 	FVector GetHitTarget() const;
 	FRotator GetShotStartLocAndRot();
-
+	ECombatState GetCombatState();
 #pragma endregion Getters
 
     #pragma region Elimination
@@ -202,7 +211,10 @@ public:
 
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
 	
-
+	void PlayEliminationMontage();
+	void PlayHitReactMontage();
+	void PlayFireMontage(bool bAiming);
+	void PlayReloadMontage();
 	
 protected:
 
@@ -213,14 +225,14 @@ protected:
 	void Look(const FInputActionValue& Value);
 			
 	void EventInteract();
+	void EventReload();
 	void EventCrouch();
 	void EventAimStart();
 	void EventAimEnd();
 	void EventFireStart();
 	void EventFireStop();
 	void AimOffset(float DeltaTime);
-	void PlayEliminationMontage();
-	void PlayHitReactMontage();
+	
 	void CrosshairLogicUpdate();
 	void UpdateCrosshair(float DeltaTime);
 	void CenterCrosshair();

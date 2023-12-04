@@ -28,6 +28,7 @@
 #include "Sound/SoundCue.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Stryker/PlayerState/StrykerPlayerState.h"
+#include "Stryker/Enumerations/WeaponTypes.h"
 //////////////////////////////////////////////////////////////////////////
 // AStrykerCharacter
 
@@ -391,7 +392,8 @@ void AStrykerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("%f"), Health));
 	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, "Damaged");
 	UpdateHUDHealth();
-	PlayHitReactMontage();
+	if(GetCombatState() != ECombatState::ECS_Reloading)
+		PlayHitReactMontage();
 	if (Health==0.f)
     {
 	AStrykerGameMode* GM = GetWorld()->GetAuthGameMode<AStrykerGameMode>();
@@ -413,6 +415,39 @@ void AStrykerCharacter::PlayHitReactMontage()
 	{
 		AnimInstance->Montage_Play(HitReactMontage);
 		FName SectionName("FromFront");
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+void AStrykerCharacter::PlayFireMontage(bool bAiming)
+{
+	if (this == nullptr || WeaponComponent->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && FireWeaponMontage)
+	{
+		AnimInstance->Montage_Play(FireWeaponMontage);
+		FName SectionName;
+		SectionName = bAiming ? FName("AimFire") : FName("HipFire");
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+void AStrykerCharacter::PlayReloadMontage()
+{
+	if (WeaponComponent == nullptr || WeaponComponent->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ReloadMontage)
+	{
+		AnimInstance->Montage_Play(ReloadMontage);
+		FName SectionName;
+		switch (WeaponComponent->EquippedWeapon->GetWeaponType())
+		{
+		case EWeaponType::EWT_AssaultRifle:
+			SectionName = FName("AR");
+		default:
+			break;
+		}
+
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
@@ -574,6 +609,7 @@ void AStrykerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AStrykerCharacter::EventAimEnd);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &AStrykerCharacter::EventFireStart);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AStrykerCharacter::EventFireStop);
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AStrykerCharacter::EventReload);
 	}
 }
 void AStrykerCharacter::InitializeCrosshair_Implementation()
@@ -710,6 +746,12 @@ FVector AStrykerCharacter::GetHitTarget() const
 
 	return  ShotRotation;
 }
+ ECombatState AStrykerCharacter::GetCombatState()
+ {
+	 if (WeaponComponent == nullptr) return ECombatState();
+	 return WeaponComponent->CombatState;
+	
+ }
 #pragma endregion Getters
 
 
@@ -766,6 +808,12 @@ void AStrykerCharacter::EventInteract()
 	}
 }
 
+void AStrykerCharacter::EventReload()
+{
+	if (WeaponComponent)
+		WeaponComponent->Reload();
+}
+
 void AStrykerCharacter::EventCrouch()
 {
 	if(!bIsCrouched)
@@ -803,7 +851,7 @@ void AStrykerCharacter::EventFireStart()
 
 void AStrykerCharacter::EventFireStop()
 {
-	if (WeaponComponent && WeaponComponent->EquippedWeapon)
+	if (WeaponComponent)
 	{
 		WeaponComponent->FireButtonPressed(false);
 	}

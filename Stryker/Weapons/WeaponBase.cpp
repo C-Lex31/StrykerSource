@@ -212,4 +212,10 @@ void AWeaponBase::DropWeapon()
 	OwnerController =nullptr ;
 }
 
+void AWeaponBase::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
+	SetHUDAmmo();
+}
+
 

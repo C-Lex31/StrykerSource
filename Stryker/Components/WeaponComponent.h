@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "Stryker/UI/HUD/StrykerHUD.h"
 #include "Stryker/Enumerations/WeaponTypes.h"
+#include "Stryker/Enumerations/CombatState.h"
 #include "WeaponComponent.generated.h"
 
 #define TRACE_LENGTH 80000.f
@@ -27,8 +28,6 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 		float BaseWalkSpeed;
 		UPROPERTY(EditAnywhere)
 		float AimWalkSpeed;
-		UPROPERTY(EditAnywhere, Category = Weapon)
-	    class UAnimMontage* FireWeaponMontage;
 		bool bFireButtonPressed;
 
 		FVector CameraTraceEndLocation;
@@ -63,6 +62,11 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 	void FireTimerFinished();
 	bool CanFire();
 
+	UPROPERTY( ReplicatedUsing = OnRep_CombatState)
+	ECombatState CombatState = ECombatState::ECS_Unoccupied ;
+	UFUNCTION()
+	void OnRep_CombatState();
+
 	// Carried ammo for the currently-equipped weapon
 	UPROPERTY(Replicated)
 	int32 CarriedAmmo;
@@ -73,6 +77,8 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 	UPROPERTY(EditAnywhere)
 	int32 StartingARAmmo = 30;
 	void InitializeCarriedAmmo();
+	void UpdateAmmoValues();
+	int32 AmountToReload();
 public:	
 	// Sets default values for this component's properties
 	UWeaponComponent();
@@ -84,6 +90,10 @@ public:
 //	FORCEINLINE float GetCrosshairShootingFactor() { return CrosshairShootingFactor; }
 	FORCEINLINE void SetHitTarget(FVector Target) { HitTarget = Target; }
 	void Fire();
+	void Reload();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -95,17 +105,22 @@ protected:
 
 	UFUNCTION(Server , Reliable  )
 	void ServerSetAiming(bool bAiming);
-	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(Server , Reliable)
+	void ServerReload();
+
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
 	UFUNCTION()
 	void OnRep_EquipWeapon();
 
+	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
+	void HandleReload();
 	void TraceCameraAim(FHitResult& TraceHitResult);
 	void CrosshairLogicUpdate();
-	void PlayFireMontage(bool bAiming);
 	void SetHUDCrosshairs(float DeltaTime);
 };

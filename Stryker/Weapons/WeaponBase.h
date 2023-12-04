@@ -29,12 +29,15 @@ public:
 	virtual void OnRep_Owner() override;
 	virtual void Fire(const FVector& HitTarget);
 	void DropWeapon();
+	void AddAmmo(int32 AmmoToAdd);
 	void ShowPickupWidget(bool bPickupWidget);
 	void SetWeaponState(EWeaponState State);
 	void SetHUDAmmo(); //Also called on server from weapon component
 	FORCEINLINE bool  GetIsEmpty() { return Ammo <= 0.f; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE EWeaponType GetWeaponType()const { return WeaponType; }
+	FORCEINLINE uint32 GetAmmo()const { return Ammo; }
+	FORCEINLINE int32 GetMagCapacity() { return MagCapacity; }
 	/**
 	* Textures for the weapon crosshairs
 	*/
