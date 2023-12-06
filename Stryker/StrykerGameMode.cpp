@@ -8,15 +8,39 @@
 #include "GameFramework/PlayerStart.h"
 #include "Stryker/PlayerState/StrykerPlayerState.h"
 
+
 AStrykerGameMode::AStrykerGameMode()
 {
+
+	bDelayedStart = true;
 	// set default pawn class to our Blueprinted character
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/StrykerGame/Blueprints/Character/BP_StrykerCharacter"));
 	if (PlayerPawnBPClass.Class != NULL)
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+	
 }
+
+void AStrykerGameMode::BeginPlay()
+{
+	LevelStartingTime = GetWorld()->GetTimeSeconds();
+}
+
+void AStrykerGameMode::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (MatchState == MatchState::WaitingToStart)
+	{
+		CountdownTime = WarmupTime - (GetWorld()->GetTimeSeconds() - LevelStartingTime);
+		if (CountdownTime <= 0.f)
+		{
+			StartMatch();
+		}
+	}
+}
+
 
 void AStrykerGameMode::PlayerEliminated(AStrykerCharacter* EliminatedPlayer, AStrykerPlayerController* PC_Victim, AStrykerPlayerController* PC_Attacker)
 {
@@ -50,3 +74,4 @@ void AStrykerGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
 	}
 }
+

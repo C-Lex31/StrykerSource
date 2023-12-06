@@ -113,7 +113,7 @@ void AStrykerCharacter::PossessedBy(AController* NewController)
 		PS->AddToScore(0.f);
 		PS->AddToDeaths(0.f);
 	}
-
+	
 		
 		OnTakeAnyDamage.AddDynamic(this, &AStrykerCharacter::ReceiveDamage);
 }
@@ -125,9 +125,9 @@ void AStrykerCharacter::BeginPlay()
 
 	LocalPC = Cast<AStrykerPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 	//Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	if (const ULocalPlayer* Player = (GEngine && GetWorld()) ? GEngine->GetFirstGamePlayer(GetWorld()) : nullptr)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(Player))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
