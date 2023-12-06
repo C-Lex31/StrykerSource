@@ -16,6 +16,38 @@ void AStrykerPlayerController::BeginPlay()
 	StrykerHUD = Cast<AStrykerHUD>(GetHUD());
 }
 
+void AStrykerPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	SetHUDTime();
+}
+
+void AStrykerPlayerController::SetHUDTime()
+{
+	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
+	//Only update the HUD when Seconds change not every frame 
+	if (CountdownInt != SecondsLeft)
+	{
+		SetMatchCountdown(MatchTime - GetServerTime());
+	}
+
+	CountdownInt = SecondsLeft;
+}
+
+void AStrykerPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest, float TimeServerReceivedClientRequest)
+{
+	float RTT = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
+	float CurrentServerTime = TimeServerReceivedClientRequest + 0.5f * RTT;
+	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+}
+
+void AStrykerPlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)
+{
+	float ServerTimeOfRequestReceive = GetWorld()->GetTimeSeconds();
+	ClientReportServerTime(TimeOfClientRequest, ServerTimeOfRequestReceive);
+}
+
 //Called on owning clients only
 void AStrykerPlayerController::ClientHUD_Implementation()
 {
@@ -103,9 +135,49 @@ void AStrykerPlayerController::SetCarriedAmmo_Implementation(int32 CarriedAmmo)
 	}
 }
 
+void AStrykerPlayerController::SetMatchCountdown(float CountdownTime)
+{
+	bool bHUDValid =
+		PlayerOverlay &&
+		PlayerOverlay->MatchCountdownText;
+
+	if (bHUDValid)
+	{
+		int32 Minutes = FMath::FloorToInt(CountdownTime / 60);
+		int32 Seconds = CountdownTime - Minutes * 60;
+
+		FString MatchCountdownString = FString::Printf(TEXT("%2d:%2d"), Minutes ,Seconds );
+		PlayerOverlay->MatchCountdownText->SetText(FText::FromString(MatchCountdownString));
+	}
+}
+
 void AStrykerPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
 }
 
+float AStrykerPlayerController::GetServerTime()
+{
+	if (HasAuthority()) return GetWorld()->GetTimeSeconds();
+	else return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+}
+
+void AStrykerPlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
+	if (IsLocalController())
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+	}
+	FTimerHandle TH_SyncTimeWithServer;
+	GetWorldTimerManager().SetTimer(TH_SyncTimeWithServer, this, &ThisClass::CheckTimeSync , TimeSyncFrequency, true, -1.f);
+}
+
+void AStrykerPlayerController::CheckTimeSync()
+{
+	if (IsLocalController() )
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());	
+	}
+}
