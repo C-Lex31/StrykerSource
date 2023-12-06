@@ -173,6 +173,19 @@ void UWeaponComponent::Reload()
 		ServerReload();
 }
 
+void UWeaponComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if (CarriedAmmoMap.Contains(WeaponType))
+	{
+		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount, 0, MaxCarriedAmmo);
+		UpdateCarriedAmmo();
+	}
+	if (EquippedWeapon && EquippedWeapon->GetIsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
+	}
+}
+
 void UWeaponComponent::FinishReloading()
 {
 	if (PlayerCharacter == nullptr) return;
@@ -346,6 +359,20 @@ void UWeaponComponent::TraceCameraAim(FHitResult& TraceHitResult)
 			HUDPackage.CrosshairsColor = FLinearColor::White;
 		}
 	}
+}
+
+void UWeaponComponent::UpdateCarriedAmmo()
+{
+	if (EquippedWeapon == nullptr) return;
+
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+
+	StrykerPlayerController = StrykerPlayerController == nullptr ? Cast<AStrykerPlayerController>(PlayerCharacter->Controller) : StrykerPlayerController;
+	if (StrykerPlayerController)
+		StrykerPlayerController->SetCarriedAmmo(CarriedAmmo);
 }
 
 

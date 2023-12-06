@@ -91,6 +91,7 @@ public:
 	FORCEINLINE void SetHitTarget(FVector Target) { HitTarget = Target; }
 	void Fire();
 	void Reload();
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
@@ -123,4 +124,5 @@ protected:
 	void TraceCameraAim(FHitResult& TraceHitResult);
 	void CrosshairLogicUpdate();
 	void SetHUDCrosshairs(float DeltaTime);
+	void UpdateCarriedAmmo();
 };
