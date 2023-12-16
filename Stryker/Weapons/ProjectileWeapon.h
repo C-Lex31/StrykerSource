@@ -13,7 +13,8 @@ UCLASS()
 class STRYKER_API AProjectileWeapon : public AWeaponBase
 {
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere)
+
+	UPROPERTY(EditAnywhere )
 	TSubclassOf<class AProjectile>ProjectileClass;
 
 public:

@@ -72,10 +72,14 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 	int32 CarriedAmmo;
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 	UPROPERTY(EditAnywhere)
-	int32 MaxCarriedAmmo = 500;
+	int32 MaxCarriedAmmo = 500.f;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingARAmmo = 30;
+	int32 StartingARAmmo = 30.f;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingRLAmmo = 0.f;
+
 	void InitializeCarriedAmmo();
 	void UpdateAmmoValues();
 	int32 AmountToReload();

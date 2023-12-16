@@ -20,6 +20,8 @@ UParticleSystem* ImpactParticles;
 
 UPROPERTY(EditAnywhere)
 class USoundCue* ImpactSound;
+
+void ToggleCollision();
 public:	
 
 	AProjectile();
@@ -31,6 +33,8 @@ protected:
 	UFUNCTION()
 	virtual void OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	UPROPERTY(EditAnywhere)
+	float Damage = 20, f;
 
 
 

@@ -9,6 +9,9 @@
 #include "Sound/SoundCue.h"
 #include "Stryker/Character/StrykerCharacter.h"
 #include "Stryker/Stryker.h"
+
+
+
 // Sets default values
 AProjectile::AProjectile()   
 {
@@ -21,23 +24,35 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	//CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
-
 	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
-
+	
 	ProjectileComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileComponent->bRotationFollowsVelocity = true;
 }
 void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+	APawn* InstigatorPawn = GetInstigator();
+	FTimerHandle TH_ToggleCollison;
+	if (!InstigatorPawn)
+		CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
+	else
+	{
+		CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Ignore);
+		GetWorldTimerManager().SetTimer(
+			TH_ToggleCollison, this, &ThisClass::ToggleCollision, 0.01f, false);
+	}
 	if (HasAuthority())
 	{
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnProjectileHit);
 	}
 }
-
+void AProjectile::ToggleCollision()
+{
+	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
+}
 void AProjectile::OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	AStrykerCharacter* StrykerCharacter = Cast<AStrykerCharacter>(OtherActor);

@@ -35,6 +35,7 @@ void UWeaponComponent::InterpFOV(float DeltaTime)
 void UWeaponComponent::InitializeCarriedAmmo()
 {
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, StartingRLAmmo);
 }
 
 void UWeaponComponent::UpdateAmmoValues()

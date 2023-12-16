@@ -4,16 +4,20 @@
 #include "StrykerPlayerController.h"
 #include "Stryker/UI/HUD/StrykerHUD.h"
 #include "Stryker/UI/HUD/CharacterOverlay.h"
+#include "Stryker/UI/HUD/Announcement.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "Stryker/Interfaces/PlayerControllerInterface.h"
+#include "Stryker/StrykerGameMode.h"
+#include "Net/UnrealNetwork.h"
 void AStrykerPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	StrykerHUD = Cast<AStrykerHUD>(GetHUD());
+	ServerCheckMatchState();
 }
 
 void AStrykerPlayerController::Tick(float DeltaTime)
@@ -23,13 +27,28 @@ void AStrykerPlayerController::Tick(float DeltaTime)
 	SetHUDTime();
 }
 
+void AStrykerPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AStrykerPlayerController, m_MatchState);
+}
+
 void AStrykerPlayerController::SetHUDTime()
 {
-	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
+	float TimeLeft = 0.f;
+	if (m_MatchState == MatchState::WaitingToStart) TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
+	else if (m_MatchState == MatchState::InProgress) TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
+	
+	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	//Only update the HUD when Seconds change not every frame 
 	if (CountdownInt != SecondsLeft)
 	{
-		SetMatchCountdown(MatchTime - GetServerTime());
+		if (m_MatchState == MatchState::WaitingToStart)
+			SetMatchWarmupCountdown(TimeLeft);
+
+		if( m_MatchState == MatchState::InProgress)
+			SetMatchCountdown(TimeLeft);
 	}
 
 	CountdownInt = SecondsLeft;
@@ -147,12 +166,62 @@ void AStrykerPlayerController::SetMatchCountdown(float CountdownTime)
 		int32 Seconds = CountdownTime - Minutes * 60;
 
 		FString MatchCountdownString = FString::Printf(TEXT("%2d:%2d"), Minutes ,Seconds );
+		if(PlayerOverlay && PlayerOverlay->MatchCountdownText)
 		PlayerOverlay->MatchCountdownText->SetText(FText::FromString(MatchCountdownString));
 	}
 }
 
+void AStrykerPlayerController::SetMatchWarmupCountdown(float CountdownTime)
+{
+	bool bHUDValid =
+		Announcement &&
+		Announcement->WarmupTimer;
+
+	if (bHUDValid)
+	{
+		int32 Minutes = FMath::FloorToInt(CountdownTime / 60);
+		int32 Seconds = CountdownTime - Minutes * 60;
+
+		FString MatchCountdownString = FString::Printf(TEXT("%2d:%2d"), Minutes, Seconds);
+		if (Announcement)
+			Announcement->WarmupTimer->SetText(FText::FromString(MatchCountdownString));
+	}
+}
+
+void AStrykerPlayerController::MatchStateSet(FName State)
+{
+	m_MatchState = State;
+	
+	
+if (m_MatchState == MatchState::InProgress)
+	{
+		HandleMatchHasStarted();
+	}
+
+}
+
+void AStrykerPlayerController::HandleMatchHasStarted()
+{
+	if (Announcement)
+	{
+		UKismetSystemLibrary::PrintString(GetWorld());
+		Announcement->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+void AStrykerPlayerController::OnRep_MatchState()
+{
+	
+		if (m_MatchState == MatchState::InProgress)
+		{
+			HandleMatchHasStarted();
+		}
+	
+}
+
 void AStrykerPlayerController::OnPossess(APawn* InPawn)
 {
+
 	Super::OnPossess(InPawn);
 
 }
@@ -179,5 +248,42 @@ void AStrykerPlayerController::CheckTimeSync()
 	if (IsLocalController() )
 	{
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());	
+	}
+}
+
+void AStrykerPlayerController::ClientJoinMidGame_Implementation(FName State , float Warmup , float MatchDuration , float LevelStart)
+{
+	WarmupTime = Warmup;
+	MatchTime = MatchDuration;
+	LevelStartingTime = LevelStart;
+	m_MatchState = State;
+	MatchStateSet(m_MatchState);
+	if (m_MatchState == MatchState::WaitingToStart)
+	{
+		Announcement = CreateWidget<UAnnouncement>(UGameplayStatics::GetPlayerController(GetWorld(), 0), AnnouncementClass);
+		if (Announcement)
+			Announcement->AddToViewport();
+	}
+
+}
+
+void AStrykerPlayerController::ServerCheckMatchState_Implementation()
+{
+	AStrykerGameMode* StrykerGM = Cast<AStrykerGameMode>(UGameplayStatics::GetGameMode(this));
+	if (StrykerGM)
+	{
+		WarmupTime = StrykerGM->WarmupTime;
+		MatchTime = StrykerGM->MatchTime;
+		LevelStartingTime = StrykerGM->LevelStartingTime;
+		m_MatchState = StrykerGM->GetMatchState();
+		ClientJoinMidGame(m_MatchState, WarmupTime, MatchTime, LevelStartingTime);
+		#if 0
+if (m_MatchState == MatchState::WaitingToStart)
+		{
+			Announcement = CreateWidget<UAnnouncement>(UGameplayStatics::GetPlayerController(GetWorld(), 0), AnnouncementClass);
+			if (Announcement)
+				Announcement->AddToViewport();
+		}
+#endif
 	}
 }

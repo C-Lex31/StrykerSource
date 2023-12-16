@@ -8,7 +8,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Stryker/PlayerState/StrykerPlayerState.h"
 
-
+#include "Kismet/KismetSystemLibrary.h"
 AStrykerGameMode::AStrykerGameMode()
 {
 
@@ -37,6 +37,21 @@ void AStrykerGameMode::Tick(float DeltaTime)
 		if (CountdownTime <= 0.f)
 		{
 			StartMatch();
+		}
+	}
+}
+
+void AStrykerGameMode::OnMatchStateSet()
+{
+	Super::OnMatchStateSet();
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		AStrykerPlayerController* StrykerPC = Cast<AStrykerPlayerController>(*It);
+		if (StrykerPC)
+		{
+			
+			StrykerPC->MatchStateSet(MatchState);
 		}
 	}
 }
