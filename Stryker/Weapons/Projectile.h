@@ -11,15 +11,10 @@ class STRYKER_API AProjectile : public AActor
 {
 	GENERATED_BODY()
 
-UPROPERTY(EditAnywhere)
-class UBoxComponent* CollisionBox;
+
 UPROPERTY(VisibleAnywhere)
 class UProjectileMovementComponent* ProjectileComponent;
-UPROPERTY(EditAnywhere)
-UParticleSystem* ImpactParticles;
 
-UPROPERTY(EditAnywhere)
-class USoundCue* ImpactSound;
 
 void ToggleCollision();
 public:	
@@ -27,15 +22,25 @@ public:
 	AProjectile();
 	virtual void Tick(float DeltaTime) override;
 	virtual void Destroyed() override;
+
 protected:
 
 	virtual void BeginPlay() override;
+
 	UFUNCTION()
 	virtual void OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	UPROPERTY(EditAnywhere)
 	float Damage = 20, f;
 
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* CollisionBox;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ImpactParticles;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* ImpactSound;
 
 
 };

@@ -13,6 +13,9 @@ UCLASS()
 class STRYKER_API ARocketProjectile : public AProjectile
 {
 	GENERATED_BODY()
+
+	FTimerHandle TH_DestroyTrail;
+	void DestroyTrailParticle();
 	
 	UPROPERTY(EditAnywhere , meta = (AllowPrivateAccess ="true"))
 	float DamageInnerRadius = 200.f;
@@ -22,9 +25,26 @@ class STRYKER_API ARocketProjectile : public AProjectile
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* RocketMesh;
+
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* TrailParticle;
+
+	UPROPERTY();
+	class UNiagaraComponent* TrailParticleComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ProjectileLoop;
+
+	UPROPERTY()
+	UAudioComponent* ProjectileLoopComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundAttenuation* LoopingSoundAttenuation;
 protected:
 	virtual void OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+	virtual void BeginPlay()override;
 public:
 
 	ARocketProjectile() ;
+	void Destroyed() override;
 };
