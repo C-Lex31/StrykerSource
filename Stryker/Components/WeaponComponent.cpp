@@ -12,7 +12,7 @@
 #include "DrawDebugHelpers.h"
 #include "Stryker/PlayerController/StrykerPlayerController.h"
 #include "Camera/CameraComponent.h"
-
+#include "Sound/SoundCue.h"
 void UWeaponComponent::InterpFOV(float DeltaTime)
 {
 	if (EquippedWeapon == nullptr) return;
@@ -140,7 +140,7 @@ void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEqip)
 
 	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 	PlayerCharacter->bUseControllerRotationYaw = true;
-	
+	PlayEquipWeaponSound(EquippedWeapon);
 }
 
 void UWeaponComponent::FireButtonPressed(bool bPressed)
@@ -311,7 +311,7 @@ void UWeaponComponent::OnRep_EquipWeapon()
 
 		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 		PlayerCharacter->bUseControllerRotationYaw = true;
-		
+		PlayEquipWeaponSound(EquippedWeapon);
 		//EquippedWeapon->SetPlayerRef(PlayerCharacter);
 	}
 }
@@ -375,6 +375,18 @@ void UWeaponComponent::UpdateCarriedAmmo()
 	StrykerPlayerController = StrykerPlayerController == nullptr ? Cast<AStrykerPlayerController>(PlayerCharacter->Controller) : StrykerPlayerController;
 	if (StrykerPlayerController)
 		StrykerPlayerController->SetCarriedAmmo(CarriedAmmo);
+}
+
+void UWeaponComponent::PlayEquipWeaponSound(AWeaponBase* WeaponToEquip)
+{
+	if (PlayerCharacter && WeaponToEquip && WeaponToEquip->EquipSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			WeaponToEquip->EquipSound,
+			PlayerCharacter->GetActorLocation()
+		);
+	}
 }
 
 

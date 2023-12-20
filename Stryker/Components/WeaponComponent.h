@@ -131,4 +131,5 @@ protected:
 	void CrosshairLogicUpdate();
 	void SetHUDCrosshairs(float DeltaTime);
 	void UpdateCarriedAmmo();
+	void PlayEquipWeaponSound(AWeaponBase* WeaponToEquip);
 };

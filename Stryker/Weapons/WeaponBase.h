@@ -60,17 +60,19 @@ public:
 	* Zoomed FOV while aiming
 	*/
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	float ZoomedFOV = 30.f;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	float ZoomInterpSpeed = 20.f;
 	/** 
 	* Automatic fire
 	*/
-	UPROPERTY(EditAnywhere, Category = Combat)
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	float FireDelay = .15f;
-	UPROPERTY(EditAnywhere, Category = Combat)
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	bool bAutomatic = true;
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
+	class USoundCue* EquipSound;
 	//void SetPlayerRef (class AStrykerCharacter* PlayerRef);
 	//FORCEINLINE AStrykerCharacter* GetPlayerRef() { return PlayerCharacter; }
 protected:
@@ -113,6 +115,8 @@ private:
 	 
 	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	EWeaponType WeaponType;
+
+
 
 	class AStrykerCharacter* OwnerCharacter;
 	class AStrykerPlayerController* OwnerController;
