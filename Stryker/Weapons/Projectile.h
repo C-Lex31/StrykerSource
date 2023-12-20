@@ -12,8 +12,7 @@ class STRYKER_API AProjectile : public AActor
 	GENERATED_BODY()
 
 
-UPROPERTY(VisibleAnywhere)
-class UProjectileMovementComponent* ProjectileComponent;
+
 
 
 void ToggleCollision();
@@ -26,6 +25,9 @@ public:
 protected:
 
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere)
+	class UProjectileMovementComponent* ProjectileComponent;
 
 	UFUNCTION()
 	virtual void OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);

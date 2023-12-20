@@ -32,9 +32,9 @@ public:
 	UImage* CrosshairLineTop;
 	UPROPERTY(meta=(BindWidget))
 	UImage* CrosshairLineBottom;
-//	UPROPERTY(meta=(BindWidget))
+
 	float CrosshairSpread;
-	//UPROPERTY(meta=(BindWidget))
+
 	FLinearColor CrosshairColor;
 	//CrosshairLineLeft->
 

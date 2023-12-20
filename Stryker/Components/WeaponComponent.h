@@ -9,7 +9,6 @@
 #include "Stryker/Enumerations/CombatState.h"
 #include "WeaponComponent.generated.h"
 
-#define TRACE_LENGTH 80000.f
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class STRYKER_API UWeaponComponent : public UActorComponent
@@ -79,6 +78,9 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 
 	UPROPERTY(EditAnywhere)
 	int32 StartingRLAmmo = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingSMGAmmo = 30.f;
 
 	void InitializeCarriedAmmo();
 	void UpdateAmmoValues();

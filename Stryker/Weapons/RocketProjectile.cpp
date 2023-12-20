@@ -8,12 +8,17 @@
 #include "Components/BoxComponent.h "
 #include "Components/AudioComponent.h"
 #include "NiagaraComponent.h"
+#include "Stryker/Components/RocketMovementComponent.h"
 
 ARocketProjectile::ARocketProjectile()
 {
 	RocketMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Rocket Mesh"));
 	RocketMesh->SetupAttachment(RootComponent);
 	RocketMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>(TEXT("RocketMovementComponent"));
+	RocketMovementComponent->bRotationFollowsVelocity = true;
+	RocketMovementComponent->SetIsReplicated(true);
 }
 
 void ARocketProjectile::Destroyed()
@@ -67,6 +72,10 @@ void ARocketProjectile::DestroyTrailParticle()
 
 void ARocketProjectile::OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	if (OtherActor == GetOwner())
+	{
+		return;
+	}
 	APawn* InstigatorPawn = GetInstigator();
 	if (InstigatorPawn && HasAuthority())
 	{

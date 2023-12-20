@@ -36,6 +36,7 @@ void UWeaponComponent::InitializeCarriedAmmo()
 {
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, StartingRLAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_SMG, StartingSMGAmmo);
 }
 
 void UWeaponComponent::UpdateAmmoValues()

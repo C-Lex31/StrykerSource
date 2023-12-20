@@ -76,6 +76,10 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
+	USkeletalMeshComponent* WeaponMesh;
+
 	UFUNCTION()
 	virtual void OnSphereOverlap(
 		UPrimitiveComponent* OverlappedComponent,
@@ -85,6 +89,7 @@ protected:
 		bool bFromSweep,
 		const FHitResult& SweepResult
 		) ;
+
 	UFUNCTION()
 	virtual void OnSphereEndOverlap(
 		UPrimitiveComponent* OverlappedComponent,
@@ -94,8 +99,7 @@ protected:
 		) ;
 	
 private:
-	UPROPERTY(VisibleAnywhere , Category="WeaponProperties")
-	 USkeletalMeshComponent* WeaponMesh;
+
 	UPROPERTY(VisibleAnywhere , Category="WeaponProperties")
 	class USphereComponent* AreaSphere;
 	UPROPERTY(ReplicatedUsing=OnRep_WeaponState, VisibleAnywhere, Category = "WeaponProperties")

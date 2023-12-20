@@ -40,6 +40,10 @@ class STRYKER_API ARocketProjectile : public AProjectile
 
 	UPROPERTY(EditAnywhere)
 	USoundAttenuation* LoopingSoundAttenuation;
+
+	UPROPERTY(VisibleAnywhere)
+	class URocketMovementComponent* RocketMovementComponent;
+
 protected:
 	virtual void OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
 	virtual void BeginPlay()override;

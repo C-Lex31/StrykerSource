@@ -5,16 +5,72 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "Stryker/Character/StrykerCharacter.h"
-
-//#include "Stryker/Components/WeaponComponent.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Sound/SoundCue.h"
 #include "Stryker/Stryker.h"
+FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget)
+{
+	FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
+	FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
+	FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
+	FVector EndLoc = SphereCenter + RandVec;
+	FVector ToEndLoc = EndLoc - TraceStart;
+
+	DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Red, true);
+	DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, true);
+	DrawDebugLine(
+		GetWorld(),
+		TraceStart,
+		FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size()),// Dividing to prevent overflow of x,y,z values as TRACE_LENGTH is a large value.
+		FColor::Cyan,
+		true);
+
+	return FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size());
+}
+
+void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit)
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		FVector End = bUseScatter ? TraceEndWithScatter(TraceStart, HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f;
+
+		World->LineTraceSingleByChannel(
+			OutHit,
+			TraceStart,
+			End,
+			ECollisionChannel::ECC_Visibility
+		);
+		//UKismetSystemLibrary::LineTraceSingle(World, TraceStart, End, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIgnore, EDrawDebugTrace::ForDuration, FireHit, true, FColor::Blue, FColor::Green, 1.f);
+		FVector BeamEnd = End;
+		if (OutHit.bBlockingHit)
+		{
+			BeamEnd = OutHit.ImpactPoint;
+		}
+		if (BeamParticles)
+		{
+			UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
+				World,
+				BeamParticles,
+				TraceStart,
+				FRotator::ZeroRotator,
+				true
+			);
+			if (Beam)
+			{
+				Beam->SetVectorParameter(FName("Target"), BeamEnd);
+			}
+		}
+	}
+}
+
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
 
 	APawn* OwnerPawn = Cast<APawn>(GetOwner()); //Owner is character 
 	if (OwnerPawn == nullptr) return;
-	AController* InstigatorController = OwnerPawn->GetController();
+	AController* InstigatorController = OwnerPawn->GetController();// NOTE : Instigator controller will be null on all simulated proxies 
 	PlayerCharacter = PlayerCharacter == nullptr ? Cast<AStrykerCharacter>(OwnerPawn) : PlayerCharacter;
 	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("Muzzle");
 	if ( PlayerCharacter && MuzzleSocket )
@@ -46,26 +102,21 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		//	FVector End = Start + UKismetMathLibrary::GetForwardVector(HitTarget) * 80000.f;
 		FVector Start = PlayerCharacter->GetCrosshairHasObstacle() ? SocketStart : SocketStart;
 		FVector End = Start + (HitTarget - Start) * 1.25f;
-		// End = PlayerCharacter->GetCrosshairHasObstacle() ? CenterEnd : CenterEnd;
 
-		UWorld* World = GetWorld();
-		if (World)
-		{
+		//if (World)
+		//{
 			/*World->LineTraceSingleByChannel(
 				FireHit,
 				Start,
 				End,
 				ECollisionChannel::ECC_Visibility
 			);*/
-			UKismetSystemLibrary::LineTraceSingle(World, Start, End, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIgnore, EDrawDebugTrace::ForDuration, FireHit, true, FColor::Blue, FColor::Green, 1.f);
+			//UKismetSystemLibrary::LineTraceSingle(World, Start, End, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIgnore, EDrawDebugTrace::ForDuration, FireHit, true, FColor::Blue, FColor::Green, 1.f);
+			WeaponTraceHit(Start, HitTarget, FireHit);
 			
-			if (FireHit.bBlockingHit)
-			{
 				AStrykerCharacter* StrykerCharacter = Cast<AStrykerCharacter>(FireHit.GetActor());
-				if (StrykerCharacter && InstigatorController )
+				if (StrykerCharacter && HasAuthority() && InstigatorController )
 				{
-					if (HasAuthority() )
-					{
 						UGameplayStatics::ApplyDamage(
 							StrykerCharacter,
 							Damage,
@@ -73,19 +124,46 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 							this,
 							UDamageType::StaticClass()
 						);
-					}
 				}
 				if (ImpactParticles)
 				{
 
 					UGameplayStatics::SpawnEmitterAtLocation(
-						World,
+						GetWorld(),
 						ImpactParticles,
 						FireHit.ImpactPoint,
 						FireHit.ImpactNormal.Rotation()
 					);
 				}
+				if (HitSound)
+				{
+					UGameplayStatics::PlaySoundAtLocation(
+						this,
+						HitSound,
+						FireHit.ImpactPoint
+					);
+				}
+			
+			
+			if (MuzzleFlashParticle)
+			{
+				UGameplayStatics::SpawnEmitterAttached(
+					MuzzleFlashParticle,
+				    WeaponMesh,
+					FName{},
+					SocketTransform.GetLocation(),
+					FRotator(SocketTransform.GetRotation()),
+					EAttachLocation::KeepWorldPosition
+				);
 			}
-		}
+			if (FireSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(
+					this,
+					FireSound,
+					GetActorLocation()
+				);
+			}
+
 	}
 }

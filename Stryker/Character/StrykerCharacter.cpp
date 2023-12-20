@@ -102,7 +102,6 @@ void AStrykerCharacter::PossessedBy(AController* NewController)
 	if (PC)
 	{
 
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, "PC VALID");
 		PC->InitializeGameHUD();
 		InitializeCrosshair();
 		PC->SetHealth(Health, MaxHealth);
@@ -444,6 +443,14 @@ void AStrykerCharacter::PlayReloadMontage()
 		{
 		case EWeaponType::EWT_AssaultRifle:
 			SectionName = FName("AR");
+			break;
+		case EWeaponType::EWT_RocketLauncher:
+			SectionName = FName("AR");
+			break;
+		case EWeaponType::EWT_SMG:
+			SectionName = FName("AR");
+			break;
+
 		default:
 			break;
 		}

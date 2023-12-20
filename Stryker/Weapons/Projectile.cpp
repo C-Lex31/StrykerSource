@@ -28,14 +28,15 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
 	
-	ProjectileComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
-	ProjectileComponent->bRotationFollowsVelocity = true;
+	//ProjectileComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
+	//ProjectileComponent->bRotationFollowsVelocity = true;
 }
 void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	APawn* InstigatorPawn = GetInstigator();
 	FTimerHandle TH_ToggleCollison;
+#if 0
 	if (!InstigatorPawn)
 		CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
 	else
@@ -44,6 +45,8 @@ void AProjectile::BeginPlay()
 		GetWorldTimerManager().SetTimer(
 			TH_ToggleCollison, this, &ThisClass::ToggleCollision, 0.01f, false);
 	}
+#endif // 0
+
 	if (HasAuthority())
 	{
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnProjectileHit);
