@@ -8,5 +8,7 @@ enum class EWeaponType :uint8
 {
 	EWT_AssaultRifle UMETA(DisplayName = "AssaultRifle"),
 	EWT_RocketLauncher UMETA(DisplayName = "RocketLauncher"),
-	EWT_SMG UMETA(DisplayName = "SMG")
+	EWT_SMG UMETA(DisplayName = "SMG"),
+	EWT_Sniper UMETA(DisplayName = "SniperRifle"),
+	EWT_Shotgun UMETA(DisplayName = "Shotgun")
 };

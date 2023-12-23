@@ -83,6 +83,7 @@ public:
 	virtual float GetServerTime(); // Synced with server world clock
 	virtual void ReceivedPlayer() override; // Sync with server clock as soon as possible
 	FORCEINLINE UCharacterOverlay* GetGameHUD() { return PlayerOverlay; }
+	FORCEINLINE void SetGameHUD(UCharacterOverlay* NewPlayerOverlay) {  PlayerOverlay =NewPlayerOverlay ; }
 	float LevelStartingTime = 0.f;
 	float MatchTime = 0.f;//temp
 	float WarmupTime = 0.f;

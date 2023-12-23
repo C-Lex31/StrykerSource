@@ -211,12 +211,15 @@ public:
 	virtual void Destroyed() override;
 
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
-	
+	void SetCrosshair();
+
 	void PlayEliminationMontage();
 	void PlayHitReactMontage();
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
 	
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget (bool bShowScope);
 protected:
 
 	/** Called for movement input */

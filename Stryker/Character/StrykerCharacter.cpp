@@ -29,6 +29,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Stryker/PlayerState/StrykerPlayerState.h"
 #include "Stryker/Enumerations/WeaponTypes.h"
+#include "Components/Image.h"
 //////////////////////////////////////////////////////////////////////////
 // AStrykerCharacter
 
@@ -198,7 +199,7 @@ FVector AStrykerCharacter::TraceCameraAim()
 void AStrykerCharacter::OccludeCharacter()
 {
 	if (!IsLocallyControlled()) return;
-	if ((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThreshold)
+	if ((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThreshold || (WeaponComponent && WeaponComponent->EquippedWeapon && WeaponComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Sniper &&WeaponComponent->bIsAiming ))
 	{
 		GetMesh()->SetVisibility(false);
 		if (WeaponComponent&& WeaponComponent->EquippedWeapon && WeaponComponent->EquippedWeapon->GetWeaponMesh())
@@ -284,7 +285,7 @@ void AStrykerCharacter::CrosshairLogicUpdate()
 		bCrosshairHasObstacle = UKismetMathLibrary::NotEqual_VectorVector(CameraTraceEndLocation, CrosshairLocation, 1.f);
 		if (bCrosshairHasObstacle)
 		{
-			if (LocalPC)
+			if (LocalPC && LocalPC->GetGameHUD() && LocalPC->GetGameHUD()->ObstacleCrosshair)
 			{
 
 				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, "CrosshairHasObstacle");
@@ -296,7 +297,7 @@ void AStrykerCharacter::CrosshairLogicUpdate()
 		}
 		else
 		{
-			if (LocalPC)
+			if (LocalPC && LocalPC->GetGameHUD() && LocalPC->GetGameHUD()->ObstacleCrosshair)
 			{
 				//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, "TYEFRGDCSXTRYEDCSXTRECDSX");
 				LocalPC->GetGameHUD()->ObstacleCrosshair->SetRenderOpacity(0.f);
@@ -450,7 +451,12 @@ void AStrykerCharacter::PlayReloadMontage()
 		case EWeaponType::EWT_SMG:
 			SectionName = FName("AR");
 			break;
-
+		case EWeaponType::EWT_Sniper:
+			SectionName = FName("AR");
+			break;
+		case EWeaponType::EWT_Shotgun:
+			SectionName = FName("AR");
+			break;
 		default:
 			break;
 		}
@@ -478,7 +484,7 @@ void AStrykerCharacter::ServerEliminated()
 	{
 		WeaponComponent->EquippedWeapon->DropWeapon();
 	}
-	Client_Eliminated();
+//	Client_Eliminated();
 	MulticastEliminated();
 	GetWorldTimerManager().SetTimer(
 		TH_EliminationTimer,
@@ -496,15 +502,27 @@ void AStrykerCharacter::Client_Eliminated_Implementation()
 		Crosshair = nullptr;
 	}
 	UKismetSystemLibrary::K2_ClearTimerHandle(GetWorld(), TH_CenterCrosshair);
-	if (LocalPC)
+	if (LocalPC && LocalPC->GetGameHUD())
 	{
 		LocalPC->GetGameHUD()->RemoveFromParent();
+		LocalPC->SetGameHUD(nullptr);
 	}
 
 }
 void AStrykerCharacter::MulticastEliminated_Implementation()
 {
 	bEliminated = true;
+	if (Crosshair && IsLocallyControlled())
+	{
+		Crosshair->RemoveFromParent();
+		Crosshair = nullptr;
+	}
+	UKismetSystemLibrary::K2_ClearTimerHandle(GetWorld(), TH_CenterCrosshair);
+	if (LocalPC && LocalPC->GetGameHUD() && IsLocallyControlled())
+	{
+		LocalPC->GetGameHUD()->RemoveFromParent();
+		LocalPC->SetGameHUD(nullptr);
+	}
 
 	PlayEliminationMontage();
 	if (DissolveMaterial)
@@ -544,6 +562,15 @@ void AStrykerCharacter::MulticastEliminated_Implementation()
 			ElimBotSound,
 			GetActorLocation()
 		);
+	}
+	bool bHideSniperScope = IsLocallyControlled() &&
+		WeaponComponent &&
+		WeaponComponent->bIsAiming &&
+		WeaponComponent->EquippedWeapon &&
+		WeaponComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Sniper;
+	if (bHideSniperScope)
+	{
+		ShowSniperScopeWidget(false);
 	}
 }
 
@@ -701,6 +728,31 @@ void AStrykerCharacter::SetOverlappingWeapon(AWeaponBase* Weapon)
 		{
 			OverlappedWeapon->ShowPickupWidget(true);
 		}
+	}
+}
+void AStrykerCharacter::SetCrosshair()
+{
+	if (!LocalPC->GetGameHUD() && !WeaponComponent->EquippedWeapon->CrosshairImage)return;
+	if (!Crosshair)return;
+	FSlateBrush Brush;
+	Brush.DrawAs = Crosshair->CrosshairLineTop->Brush.DrawAs;
+	Brush.Tiling = Crosshair->CrosshairLineTop->Brush.Tiling;
+	Brush.Mirroring= Crosshair->CrosshairLineTop->Brush.Mirroring;
+	Brush.ImageSize= Crosshair->CrosshairLineTop->Brush.ImageSize;
+	Brush.Margin = Crosshair->CrosshairLineTop->Brush.Margin;
+	Brush.TintColor= Crosshair->CrosshairLineTop->Brush.TintColor;
+	Brush.SetResourceObject(WeaponComponent->EquippedWeapon->CrosshairImage);
+	Crosshair->CrosshairLineTop->SetBrush(Brush);
+	Crosshair->CrosshairLineBottom->SetBrush(Brush);
+	Crosshair->CrosshairLineLeft->SetBrush(Brush);
+	Crosshair->CrosshairLineRight->SetBrush(Brush);
+
+	if (LocalPC->GetGameHUD()->ObstacleCrosshair)
+	{
+		LocalPC->GetGameHUD()->ObstacleCrosshair->CrosshairLineTop->SetBrush(Brush);
+		LocalPC->GetGameHUD()->ObstacleCrosshair->CrosshairLineBottom->SetBrush(Brush);
+		LocalPC->GetGameHUD()->ObstacleCrosshair->CrosshairLineLeft->SetBrush(Brush);
+		LocalPC->GetGameHUD()->ObstacleCrosshair->CrosshairLineRight->SetBrush(Brush);
 	}
 }
 //CALLED ON SERVER 

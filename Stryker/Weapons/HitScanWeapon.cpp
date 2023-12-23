@@ -16,14 +16,18 @@ FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVe
 	FVector EndLoc = SphereCenter + RandVec;
 	FVector ToEndLoc = EndLoc - TraceStart;
 
-	DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Red, true);
-	DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, true);
-	DrawDebugLine(
-		GetWorld(),
-		TraceStart,
-		FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size()),// Dividing to prevent overflow of x,y,z values as TRACE_LENGTH is a large value.
-		FColor::Cyan,
-		true);
+	if (bDrawDebugScatterTrace)
+	{
+		DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Red, true);
+		DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, true);
+		DrawDebugLine(
+			GetWorld(),
+			TraceStart,
+			FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size()),// Dividing to prevent overflow of x,y,z values as TRACE_LENGTH is a large value.
+			FColor::Cyan,
+			true);
+	}
+	
 
 	return FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size());
 }

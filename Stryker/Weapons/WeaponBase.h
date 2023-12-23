@@ -42,20 +42,13 @@ public:
 	* Textures for the weapon crosshairs
 	*/
 
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties|Crosshairs")
 	class UTexture2D* CrosshairsCenter;
 
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
-	UTexture2D* CrosshairsLeft;
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties|Crosshairs")
+	UTexture2D* CrosshairImage;
 
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
-	UTexture2D* CrosshairsRight;
 
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
-	UTexture2D* CrosshairsTop;
-
-	UPROPERTY(EditAnywhere, Category = Crosshairs)
-	UTexture2D* CrosshairsBottom;
 	/** 
 	* Zoomed FOV while aiming
 	*/

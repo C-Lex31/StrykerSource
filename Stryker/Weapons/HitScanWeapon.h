@@ -14,8 +14,7 @@ class STRYKER_API AHitScanWeapon : public AWeaponBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
-	class UParticleSystem* ImpactParticles;
+	
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticles;
@@ -26,14 +25,12 @@ class STRYKER_API AHitScanWeapon : public AWeaponBase
 	UPROPERTY(EditAnywhere)
 	class USoundCue* FireSound;
 
-	UPROPERTY(EditAnywhere)
-	USoundCue* HitSound;
+
 	//UPROPERTY(EditAnywhere)
 	//class UWeaponComponent*  WeaponComponent;
 	class AStrykerCharacter* PlayerCharacter ;
 
-	UPROPERTY(EditAnywhere)
-	float Damage = 20.f;
+
 	/**
 	* Trace end with scatter
 	*/
@@ -47,9 +44,20 @@ class STRYKER_API AHitScanWeapon : public AWeaponBase
 	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
 	bool bUseScatter = false;
 
+	UPROPERTY(EditAnywhere)
+	bool bDrawDebugScatterTrace=false;
 protected:
 	FVector TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget);
 	void WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit);
+
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* ImpactParticles;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* HitSound;
 public:
 	virtual void Fire(const FVector& HitTarget) override;
 	

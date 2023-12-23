@@ -42,7 +42,7 @@ void AStrykerPlayerController::SetHUDTime()
 	
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	//Only update the HUD when Seconds change not every frame 
-	if (CountdownInt != SecondsLeft)
+	if (CountdownInt != SecondsLeft )
 	{
 		if (m_MatchState == MatchState::WaitingToStart)
 			SetMatchWarmupCountdown(TimeLeft);
@@ -81,7 +81,7 @@ void AStrykerPlayerController::SetHealth_Implementation(float Health, float MaxH
 		PlayerOverlay->HealthBar &&
 		PlayerOverlay->HealthText;
 
-	if (bHUDValid)
+	if (bHUDValid )
 	{
 		const float HealthPercent = Health / MaxHealth;
 		PlayerOverlay->HealthBar->SetPercent(HealthPercent);

@@ -37,6 +37,8 @@ void UWeaponComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, StartingRLAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SMG, StartingSMGAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_Sniper, StartingSniperAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_Shotgun, StartingShotgunAmmo);
 }
 
 void UWeaponComponent::UpdateAmmoValues()
@@ -140,6 +142,7 @@ void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEqip)
 
 	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 	PlayerCharacter->bUseControllerRotationYaw = true;
+	PlayerCharacter->SetCrosshair();
 	PlayEquipWeaponSound(EquippedWeapon);
 }
 
@@ -251,12 +254,18 @@ void UWeaponComponent::OnRep_CombatState()
 
 void UWeaponComponent::SetAiming(bool bAiming)
 {
+	if (PlayerCharacter == nullptr || EquippedWeapon == nullptr)return;
+
 	bIsAiming = bAiming;
 	ServerSetAiming(bAiming);
 	if (PlayerCharacter)
 	{
 		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
 	
+	}
+	if (PlayerCharacter->IsLocallyControlled() && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Sniper)
+	{
+		PlayerCharacter->ShowSniperScopeWidget(bAiming);
 	}
 }
 
@@ -311,6 +320,7 @@ void UWeaponComponent::OnRep_EquipWeapon()
 
 		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 		PlayerCharacter->bUseControllerRotationYaw = true;
+		PlayerCharacter->SetCrosshair();
 		PlayEquipWeaponSound(EquippedWeapon);
 		//EquippedWeapon->SetPlayerRef(PlayerCharacter);
 	}

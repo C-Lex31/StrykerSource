@@ -82,7 +82,7 @@ void ARocketProjectile::OnProjectileHit(UPrimitiveComponent* HitComp, AActor* Ot
 		AController* InstigatorController = InstigatorPawn->GetController();
 		if (InstigatorController)
 		{
-			UGameplayStatics::ApplyRadialDamageWithFalloff(this, Damage, 10.f, GetActorLocation(), DamageInnerRadius, DamageOuterRadius, 1.f, UDamageType::StaticClass(), TArray<AActor*>(), this);
+			UGameplayStatics::ApplyRadialDamageWithFalloff(this, Damage, 10.f, GetActorLocation(), DamageInnerRadius, DamageOuterRadius, 1.f, UDamageType::StaticClass(), TArray<AActor*>(), this,InstigatorController);
 
 		}
 	}
