@@ -67,8 +67,10 @@ public:
 	bool bAutomatic = true;
 	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	class USoundCue* EquipSound;
-	//void SetPlayerRef (class AStrykerCharacter* PlayerRef);
-	//FORCEINLINE AStrykerCharacter* GetPlayerRef() { return PlayerCharacter; }
+		/**
+	* Enable or disable custom depth
+	*/
+	void EnableCustomDepth(bool bEnable);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
