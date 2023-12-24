@@ -455,7 +455,7 @@ void AStrykerCharacter::PlayReloadMontage()
 			SectionName = FName("AR");
 			break;
 		case EWeaponType::EWT_Shotgun:
-			SectionName = FName("AR");
+			SectionName = FName("Shotgun");
 			break;
 		default:
 			break;

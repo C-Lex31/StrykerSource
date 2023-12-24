@@ -34,6 +34,7 @@ public:
 	void SetWeaponState(EWeaponState State);
 	void SetHUDAmmo(); //Also called on server from weapon component
 	FORCEINLINE bool  GetIsEmpty() { return Ammo <= 0.f; }
+	FORCEINLINE bool  GetIsFull() { return Ammo == MagCapacity; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE EWeaponType GetWeaponType()const { return WeaponType; }
 	FORCEINLINE uint32 GetAmmo()const { return Ammo; }
@@ -114,11 +115,11 @@ private:
 	class AStrykerCharacter* OwnerCharacter;
 	class AStrykerPlayerController* OwnerController;
 	
-	UPROPERTY(EditAnywhere, Replicated)
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo)
 	int32 Ammo;
 
-	//UFUNCTION()
-	//void OnRep_Ammo();
+	UFUNCTION()
+	void OnRep_Ammo();
 
 	void SpendRound();
 

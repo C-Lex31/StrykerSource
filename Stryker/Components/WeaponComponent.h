@@ -67,7 +67,7 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 	void OnRep_CombatState();
 
 	// Carried ammo for the currently-equipped weapon
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_CarriedAmmo)
 	int32 CarriedAmmo;
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 	UPROPERTY(EditAnywhere)
@@ -90,7 +90,9 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 
 	void InitializeCarriedAmmo();
 	void UpdateAmmoValues();
+	void UpdateShotgunAmmoValues();
 	int32 AmountToReload();
+	
 public:	
 	// Sets default values for this component's properties
 	UWeaponComponent();
@@ -98,6 +100,8 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 	void EquipWeapon(AWeaponBase* WeaponToEqip);
 	void FireButtonPressed(bool bPressed);
+	void JumpToShotgunEnd();
+
 	float CrosshairShootingFactor;
 //	FORCEINLINE float GetCrosshairShootingFactor() { return CrosshairShootingFactor; }
 	FORCEINLINE void SetHitTarget(FVector Target) { HitTarget = Target; }
@@ -108,6 +112,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
 
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload();
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 protected:
@@ -130,6 +136,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquipWeapon();
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
 
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 	void HandleReload();

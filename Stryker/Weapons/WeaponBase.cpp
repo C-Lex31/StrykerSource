@@ -8,7 +8,7 @@
 #include "Stryker/Character/StrykerCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "Stryker/PlayerController/StrykerPlayerController.h"
-
+#include "Stryker/Components/WeaponComponent.h"
 void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps((OutLifetimeProps));
@@ -126,6 +126,7 @@ void AWeaponBase::OnRep_WeaponState()
 	}
 }
 
+//Server Only
 void AWeaponBase::SetHUDAmmo()
 {
 	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AStrykerCharacter>(GetOwner()) : OwnerCharacter;
@@ -138,7 +139,15 @@ void AWeaponBase::SetHUDAmmo()
 		}
 	}
 }
-
+//Clients Only
+void AWeaponBase::OnRep_Ammo()
+{
+	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AStrykerCharacter>(GetOwner()) : OwnerCharacter;
+	if (OwnerCharacter && OwnerCharacter->GetWeaponComponent() && GetIsFull())
+	{
+		OwnerCharacter->GetWeaponComponent()->JumpToShotgunEnd();
+	}
+}
 
 void AWeaponBase::SpendRound()
 {	

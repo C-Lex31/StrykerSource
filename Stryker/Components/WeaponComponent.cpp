@@ -41,6 +41,7 @@ void UWeaponComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_Shotgun, StartingShotgunAmmo);
 }
 
+//CALLED ON SERVER ONLY
 void UWeaponComponent::UpdateAmmoValues()
 {
 	if (PlayerCharacter == nullptr || EquippedWeapon == nullptr) return;
@@ -56,6 +57,44 @@ void UWeaponComponent::UpdateAmmoValues()
 
 	EquippedWeapon->AddAmmo(-ReloadAmount);
 }
+//On Clients Only
+void UWeaponComponent::OnRep_CarriedAmmo()
+{
+	bool bJumpToShotgunEnd =
+		CombatState == ECombatState::ECS_Reloading &&
+		EquippedWeapon != nullptr &&
+		EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun &&
+		CarriedAmmo == 0;
+	if (bJumpToShotgunEnd)
+	{
+		JumpToShotgunEnd();
+	}
+}
+void UWeaponComponent::ShotgunShellReload()
+{
+	if(PlayerCharacter && PlayerCharacter->HasAuthority())
+	UpdateShotgunAmmoValues();
+}
+//Server Only
+void UWeaponComponent::UpdateShotgunAmmoValues()
+{
+	if (PlayerCharacter == nullptr || EquippedWeapon == nullptr) return;
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= 1;
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+	StrykerPlayerController = StrykerPlayerController == nullptr ? Cast<AStrykerPlayerController>(PlayerCharacter->Controller) : StrykerPlayerController;
+	if (StrykerPlayerController)
+		StrykerPlayerController->SetCarriedAmmo(CarriedAmmo);
+
+	EquippedWeapon->AddAmmo(-1.f);
+	bCanFire = true;
+	if (EquippedWeapon->GetIsFull() || CarriedAmmo == 0)
+	{
+		JumpToShotgunEnd();
+	}
+}
 
 int32 UWeaponComponent::AmountToReload()
 {
@@ -68,6 +107,15 @@ int32 UWeaponComponent::AmountToReload()
 		return FMath::Clamp(RoomInMag, 0, Least);
 	}
 	return 0;
+}
+
+void UWeaponComponent::JumpToShotgunEnd()
+{
+	UAnimInstance* AnimInstance = PlayerCharacter->GetMesh()->GetAnimInstance();
+	if (AnimInstance )
+	{
+		AnimInstance->Montage_JumpToSection(FName("ShotgunEnd"));
+	}
 }
 
 // Sets default values for this component's properties
@@ -206,6 +254,8 @@ void UWeaponComponent::FinishReloading()
 	}
 }
 
+
+
 void UWeaponComponent::StartFireTimer()
 {
 	if (EquippedWeapon == nullptr || PlayerCharacter == nullptr) return;
@@ -234,6 +284,7 @@ void UWeaponComponent::FireTimerFinished()
 bool UWeaponComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;	
+	if (!EquippedWeapon->GetIsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
 	return !EquippedWeapon->GetIsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;
 }
 
@@ -294,6 +345,13 @@ void UWeaponComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 {
 	
 	if (PlayerCharacter  && PlayerCharacter->IsLocallyControlled() && !PlayerCharacter->HasAuthority()) return;
+	if (PlayerCharacter && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
+	{
+		PlayerCharacter->PlayFireMontage(bIsAiming);
+		EquippedWeapon->Fire(TraceHitTarget);
+		CombatState = ECombatState::ECS_Unoccupied;
+		return;
+	}
 	LocalFire(TraceHitTarget);
 
 }
@@ -322,9 +380,10 @@ void UWeaponComponent::OnRep_EquipWeapon()
 		PlayerCharacter->bUseControllerRotationYaw = true;
 		PlayerCharacter->SetCrosshair();
 		PlayEquipWeaponSound(EquippedWeapon);
-		//EquippedWeapon->SetPlayerRef(PlayerCharacter);
 	}
 }
+
+
 
 void UWeaponComponent::TraceCameraAim(FHitResult& TraceHitResult)
 {
