@@ -161,6 +161,7 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEqip)
 {
 	if (PlayerCharacter == nullptr || WeaponToEqip == nullptr) return;
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
 
 	if (EquippedWeapon)
 	{
@@ -222,8 +223,23 @@ void UWeaponComponent::Fire()
 
 void UWeaponComponent::Reload()
 {
-	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied)
+	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->GetIsFull())
 		ServerReload();
+}
+
+void UWeaponComponent::TossGrenade()
+{
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
+	CombatState = ECombatState::ECS_TossingGrenade;
+
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->PlayTossGrenadeMontage();
+	}
+	if (PlayerCharacter && !PlayerCharacter->HasAuthority())
+	{
+		ServerTossGrenade();
+	}
 }
 
 void UWeaponComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
@@ -252,6 +268,11 @@ void UWeaponComponent::FinishReloading()
 	{
 		Fire();
 	}
+}
+
+void UWeaponComponent::FinishTossGrenade()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
 }
 
 
@@ -298,6 +319,11 @@ void UWeaponComponent::OnRep_CombatState()
 	case ECombatState::ECS_Unoccupied:
 		if (bFireButtonPressed)
 			Fire();
+		break;
+	case ECombatState::ECS_TossingGrenade:
+		if (PlayerCharacter && !PlayerCharacter->IsLocallyControlled()) // So that the simulated proxies show the animation . 
+			PlayerCharacter->PlayTossGrenadeMontage();
+		break;
 	
 	}
 }
@@ -363,6 +389,15 @@ void UWeaponComponent::ServerReload_Implementation()
 	CombatState = ECombatState::ECS_Reloading;
 	HandleReload();
 	
+}
+
+void UWeaponComponent::ServerTossGrenade_Implementation()
+{
+	CombatState = ECombatState::ECS_TossingGrenade;
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->PlayTossGrenadeMontage();
+	}
 }
 
 void UWeaponComponent::OnRep_EquipWeapon()

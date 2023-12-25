@@ -107,10 +107,14 @@ public:
 	FORCEINLINE void SetHitTarget(FVector Target) { HitTarget = Target; }
 	void Fire();
 	void Reload();
+	void TossGrenade();
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishTossGrenade();
 
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
@@ -130,6 +134,9 @@ protected:
 
 	UFUNCTION(Server , Reliable)
 	void ServerReload();
+
+	UFUNCTION(Server, Reliable)
+	void ServerTossGrenade();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);

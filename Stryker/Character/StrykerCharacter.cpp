@@ -431,6 +431,14 @@ void AStrykerCharacter::PlayFireMontage(bool bAiming)
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
+void AStrykerCharacter::PlayTossGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && TossGrenadeMontage)
+	{
+		AnimInstance->Montage_Play(TossGrenadeMontage);
+	}
+}
 void AStrykerCharacter::PlayReloadMontage()
 {
 	if (WeaponComponent == nullptr || WeaponComponent->EquippedWeapon == nullptr) return;
@@ -464,6 +472,7 @@ void AStrykerCharacter::PlayReloadMontage()
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
+
 void AStrykerCharacter::UpdateHUDHealth()
 {
 	PC = (PC == nullptr )? Cast<AStrykerPlayerController>(Controller) : PC;
@@ -644,6 +653,7 @@ void AStrykerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &AStrykerCharacter::EventFireStart);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AStrykerCharacter::EventFireStop);
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AStrykerCharacter::EventReload);
+		EnhancedInputComponent->BindAction(TossGrenadeAction, ETriggerEvent::Triggered, this, &AStrykerCharacter::EventTossGrenade);
 	}
 }
 void AStrykerCharacter::InitializeCrosshair_Implementation()
@@ -871,6 +881,12 @@ void AStrykerCharacter::EventReload()
 {
 	if (WeaponComponent)
 		WeaponComponent->Reload();
+}
+
+void AStrykerCharacter::EventTossGrenade()
+{
+	if (WeaponComponent)
+		WeaponComponent->TossGrenade();
 }
 
 void AStrykerCharacter::EventCrouch()

@@ -64,20 +64,25 @@ class AStrykerCharacter : public ACharacter ,public ICrosshairInteractableInterf
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ReloadAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* TossGrenadeAction;
 #pragma endregion Inputs
 
 	
 	
 
-    #pragma region Animation
-	UPROPERTY(EditAnywhere, Category = Combat)
+  #pragma region Animation
+	UPROPERTY(EditAnywhere, Category = " AnimMontages")
 	class UAnimMontage* FireWeaponMontage;
-    UPROPERTY(EditAnywhere, Category = Combat)
+    UPROPERTY(EditAnywhere, Category = " AnimMontages")
 	UAnimMontage* HitReactMontage;
-	UPROPERTY(EditAnywhere, Category = Combat)
+	UPROPERTY(EditAnywhere, Category = " AnimMontages")
 	UAnimMontage* EliminationMontage;
-	UPROPERTY(EditAnywhere, Category = Combat)
+	UPROPERTY(EditAnywhere, Category = " AnimMontages")
 	UAnimMontage* ReloadMontage;
+	UPROPERTY(EditAnywhere, Category = " AnimMontages")
+	UAnimMontage* TossGrenadeMontage;
 #pragma endregion Animation
 
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappedWeapon)
@@ -217,6 +222,7 @@ public:
 	void PlayHitReactMontage();
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
+	void PlayTossGrenadeMontage();
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget (bool bShowScope);
@@ -230,6 +236,7 @@ protected:
 			
 	void EventInteract();
 	void EventReload();
+	void EventTossGrenade();
 	void EventCrouch();
 	void EventAimStart();
 	void EventAimEnd();
