@@ -13,9 +13,11 @@ class STRYKER_API AProjectile : public AActor
 
 
 
+	FTimerHandle DestroyTimer;
 
+	UPROPERTY(EditAnywhere)
+	float DestroyTime = 3.f;
 
-void ToggleCollision();
 public:	
 
 	AProjectile();
@@ -44,5 +46,23 @@ protected:
 	UPROPERTY(EditAnywhere)
 	class USoundCue* ImpactSound;
 
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* ProjectileMesh;
 
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* TrailParticle;
+
+	UPROPERTY();
+	class UNiagaraComponent* TrailParticleComponent;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	float DamageInnerRadius = 200.f;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	float DamageOuterRadius = 500.f;
+
+	void StartDestroyTimer();
+	void DestroyTimerFinished();
+	void SpawnTrailSystem();
+	void ExplodeDamage();
 };

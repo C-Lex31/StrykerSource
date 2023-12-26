@@ -9,7 +9,8 @@
 #include "Sound/SoundCue.h"
 #include "Stryker/Character/StrykerCharacter.h"
 #include "Stryker/Stryker.h"
-
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 
 // Sets default values
@@ -52,10 +53,7 @@ void AProjectile::BeginPlay()
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnProjectileHit);
 	}
 }
-void AProjectile::ToggleCollision()
-{
-	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
-}
+
 void AProjectile::OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	AStrykerCharacter* StrykerCharacter = Cast<AStrykerCharacter>(OtherActor);
@@ -64,6 +62,52 @@ void AProjectile::OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherAct
 	//	StrykerCharacter->MulticastHit();
 	}
 	Destroy();
+}
+
+void AProjectile::StartDestroyTimer()
+{
+	GetWorldTimerManager().SetTimer(
+		DestroyTimer,
+		this,
+		&AProjectile::DestroyTimerFinished,
+		DestroyTime
+	);
+}
+
+void AProjectile::DestroyTimerFinished()
+{
+	Destroy();
+}
+
+void AProjectile::SpawnTrailSystem()
+{
+
+	if (TrailParticle)
+	{
+		TrailParticleComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailParticle,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false
+		);
+	}
+}
+
+void AProjectile::ExplodeDamage()
+{
+	APawn* InstigatorPawn = GetInstigator();
+	if (InstigatorPawn && HasAuthority())
+	{
+		AController* InstigatorController = InstigatorPawn->GetController();
+		if (InstigatorController)
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(this, Damage, 10.f, GetActorLocation(), DamageInnerRadius, DamageOuterRadius, 1.f, UDamageType::StaticClass(), TArray<AActor*>(), this, InstigatorController);
+
+		}
+	}
 }
 
 // Called every frame

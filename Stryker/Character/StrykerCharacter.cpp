@@ -93,6 +93,10 @@ AStrykerCharacter::AStrykerCharacter()
 	TurningInPlace = ETurnInPlace::NotTurning;
 
 	TL_Dissolve = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
+
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Attached Grenade"));
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -133,13 +137,10 @@ void AStrykerCharacter::BeginPlay()
 		}
 		
 	}
-#if 0
-	if (HasAuthority())
+	if (AttachedGrenade)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, "Damaged");
-		OnTakeAnyDamage.AddDynamic(this, &AStrykerCharacter::ReceiveDamage);
-    }
-#endif
+		AttachedGrenade->SetVisibility(false);
+	}
 }
 
 void AStrykerCharacter::Tick(float DeltaSeconds)
@@ -173,13 +174,10 @@ FVector AStrykerCharacter::TraceCameraAim()
 	float DistanceToCharacter = (GetActorLocation() - Start).Size();
 	Start += FollowCamera->GetForwardVector() * (DistanceToCharacter + 100.f); //Adding an offset to trace start to avoid colliding with player
 	FVector End = FollowCamera->K2_GetComponentLocation() + FollowCamera->GetForwardVector() * 15000.f;
-
-	GetWorld()->LineTraceSingleByChannel(
-		TraceHitResult,
-		Start,
-		End,
-		ECollisionChannel::ECC_Visibility);
-
+	TArray<AActor*>ActorsToIgnore;
+	ActorsToIgnore.Add((WeaponComponent->EquippedWeapon));
+	
+	UKismetSystemLibrary::LineTraceSingle(GetWorld(), Start, End, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIgnore, EDrawDebugTrace::ForDuration, TraceHitResult, true, FColor::Blue, FColor::Green, 0.05f);
 
 	if (TraceHitResult.bBlockingHit)
 	{
@@ -281,8 +279,8 @@ void AStrykerCharacter::CrosshairLogicUpdate()
 		FVector TraceEnd = TraceStart + UKismetMathLibrary::GetForwardVector(TraceRotation) * (WeaponComponent->bIsAiming ? CrossObstacleTraceLength / 2.f : CrossObstacleTraceLength);
 		UKismetSystemLibrary::LineTraceSingle(GetWorld(), TraceStart, TraceEnd, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIgnore, EDrawDebugTrace::ForDuration, HitResult, true, FColor::Red, FColor::Green, 0.05f);
 		CrosshairLocation = HitResult.bBlockingHit ? HitResult.Location : CameraTraceEndLocation;
-		WeaponComponent->SetHitTarget(CrosshairLocation);
 		bCrosshairHasObstacle = UKismetMathLibrary::NotEqual_VectorVector(CameraTraceEndLocation, CrosshairLocation, 1.f);
+		WeaponComponent->SetHitTarget(bCrosshairHasObstacle ? HitResult.Location : CameraTraceEndLocation);
 		if (bCrosshairHasObstacle)
 		{
 			if (LocalPC && LocalPC->GetGameHUD() && LocalPC->GetGameHUD()->ObstacleCrosshair)

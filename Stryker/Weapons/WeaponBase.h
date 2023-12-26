@@ -39,6 +39,9 @@ public:
 	FORCEINLINE EWeaponType GetWeaponType()const { return WeaponType; }
 	FORCEINLINE uint32 GetAmmo()const { return Ammo; }
 	FORCEINLINE int32 GetMagCapacity() { return MagCapacity; }
+	FORCEINLINE FName GetRightHandSocket() { return RightHandSocket; }
+	FORCEINLINE FName GetLeftHandSocket() { return LeftHandSocket; }
+
 	/**
 	* Textures for the weapon crosshairs
 	*/
@@ -112,6 +115,11 @@ private:
 	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	EWeaponType WeaponType;
 
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties|AttachmentSockets")
+	FName RightHandSocket = FName("RightHandSocket");
+
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties|AttachmentSockets")
+	FName LeftHandSocket = FName("LeftHandSocket");
 
 
 	class AStrykerCharacter* OwnerCharacter;

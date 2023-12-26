@@ -99,6 +99,8 @@ public:
 	friend class AStrykerCharacter ;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 	void EquipWeapon(AWeaponBase* WeaponToEqip);
+	void AttachActorToRightHand(AActor* ActorToAttach);
+	void AttachActorToLeftHand(AActor* ActorToAttach);
 	void FireButtonPressed(bool bPressed);
 	void JumpToShotgunEnd();
 
@@ -117,7 +119,13 @@ public:
 	void FinishTossGrenade();
 
 	UFUNCTION(BlueprintCallable)
+	void BP_TossGrenade();
+
+	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> GrenadeClass;
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 protected:
@@ -136,8 +144,10 @@ protected:
 	void ServerReload();
 
 	UFUNCTION(Server, Reliable)
-	void ServerTossGrenade();
+	void ServerTossGrenadeCosmetic();
 
+	UFUNCTION(Server, Reliable)
+	void ServerTossGrenade(const FVector_NetQuantize& Target);
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
@@ -154,4 +164,5 @@ protected:
 	void SetHUDCrosshairs(float DeltaTime);
 	void UpdateCarriedAmmo();
 	void PlayEquipWeaponSound(AWeaponBase* WeaponToEquip);
+	void ShowAttachedGrenade(bool bShowGrenade);
 };

@@ -4,35 +4,29 @@
 
 #include "CoreMinimal.h"
 #include "Projectile.h"
-#include "RocketProjectile.generated.h"
+#include "GrenadeProjectile.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class STRYKER_API ARocketProjectile : public AProjectile
+class STRYKER_API AGrenadeProjectile : public AProjectile
 {
 	GENERATED_BODY()
 
-
-
 	UPROPERTY(EditAnywhere)
-	USoundCue* ProjectileLoop;
-
-	UPROPERTY()
-	UAudioComponent* ProjectileLoopComponent;
-
-	UPROPERTY(EditAnywhere)
-	USoundAttenuation* LoopingSoundAttenuation;
+	USoundCue* BounceSound;
 
 	UPROPERTY(VisibleAnywhere)
-	class URocketMovementComponent* RocketMovementComponent;
+	class UThrowableMovementComponent* ThrowableMovementComponent;
+public:
+	AGrenadeProjectile();
+	virtual void Destroyed() override;
 
 protected:
+	virtual void BeginPlay() override;
+	UFUNCTION()
+	void OnBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity);
 	virtual void OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
-	virtual void BeginPlay()override;
-public:
-
-	ARocketProjectile() ;
-	void Destroyed() override;
+	
 };

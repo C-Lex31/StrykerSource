@@ -158,6 +158,12 @@ float MaxHealth = 100.f;
 	void StartDissolve();
 #pragma endregion HealthAndElimination
 
+	/**
+* Grenade
+*/
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* AttachedGrenade;
 
 	class AStrykerPlayerController* PC ;
 	class AStrykerPlayerState* PS;
@@ -177,6 +183,7 @@ public:
 	FORCEINLINE ETurnInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool GetIsEliminated() const { return bEliminated; }
 	FORCEINLINE bool GetCrosshairHasObstacle() const { return bCrosshairHasObstacle; }
+	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
 #pragma endregion InlineGetters
 
     #pragma region Getters
