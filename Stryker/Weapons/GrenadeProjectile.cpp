@@ -28,36 +28,14 @@ void AGrenadeProjectile::BeginPlay()
 
 	SpawnTrailSystem();
 	StartDestroyTimer();
-	//if (!HasAuthority())
-	//{
+
 	if(CollisionBox)
 		CollisionBox->OnComponentHit.AddDynamic(this, &AGrenadeProjectile::OnProjectileHit);
-	//}
-	//if(ThrowableMovementComponent)
-	//ThrowableMovementComponent->OnProjectileBounce.AddDynamic(this, &AGrenadeProjectile::OnBounce);
+
+
 }
 
-void AGrenadeProjectile::OnBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
-{
-	GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, "BOUNCE");
-#if 0
-	if (ImpactResult.GetActor() == GetOwner())
-	{
-		if (GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, "SELFBOUNCE");
-		return;
-	}
-#endif // 0
 
-	if (BounceSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(
-			this,
-			BounceSound,
-			GetActorLocation()
-		);
-	}
-}
 void AGrenadeProjectile::OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	if (OtherActor == GetOwner())
@@ -66,6 +44,7 @@ void AGrenadeProjectile::OnProjectileHit(UPrimitiveComponent* HitComp, AActor* O
 		return;
 	}
 	ThrowableMovementComponent->SetFlagValue(false);
+	
 }
 void AGrenadeProjectile::Destroyed()
 {

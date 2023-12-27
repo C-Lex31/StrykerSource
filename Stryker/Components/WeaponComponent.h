@@ -88,6 +88,12 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 	UPROPERTY(EditAnywhere)
 	int32 StartingShotgunAmmo = 25.f;
 
+	UPROPERTY(EditAnywhere)
+	int32 MaxGrenades = 10.f;
+	
+	UPROPERTY(Replicated)
+	int32 Grenades = 5.f;
+
 	void InitializeCarriedAmmo();
 	void UpdateAmmoValues();
 	void UpdateShotgunAmmoValues();
@@ -107,6 +113,7 @@ public:
 	float CrosshairShootingFactor;
 //	FORCEINLINE float GetCrosshairShootingFactor() { return CrosshairShootingFactor; }
 	FORCEINLINE void SetHitTarget(FVector Target) { HitTarget = Target; }
+	FORCEINLINE int32 GetGrenadeCount() { return Grenades; }
 	void Fire();
 	void Reload();
 	void TossGrenade();
@@ -165,4 +172,5 @@ protected:
 	void UpdateCarriedAmmo();
 	void PlayEquipWeaponSound(AWeaponBase* WeaponToEquip);
 	void ShowAttachedGrenade(bool bShowGrenade);
+	void TossGrenadeCosmetic();
 };

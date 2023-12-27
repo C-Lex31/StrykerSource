@@ -71,6 +71,7 @@ void UWeaponComponent::OnRep_CarriedAmmo()
 		JumpToShotgunEnd();
 	}
 }
+
 void UWeaponComponent::ShotgunShellReload()
 {
 	if(PlayerCharacter && PlayerCharacter->HasAuthority())
@@ -157,6 +158,7 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UWeaponComponent, bIsAiming);
 	DOREPLIFETIME_CONDITION(UWeaponComponent, CarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME(UWeaponComponent, CombatState);
+	DOREPLIFETIME(UWeaponComponent, Grenades);
 }
 //CALLED ON SERVER from StrykerCharacter.cpp
 void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEqip)
@@ -248,16 +250,17 @@ void UWeaponComponent::Reload()
 
 void UWeaponComponent::TossGrenade()
 {
-	if (CombatState != ECombatState::ECS_Unoccupied) return;
-	CombatState = ECombatState::ECS_TossingGrenade;
+	if (Grenades == 0.f)return;
+	if (CombatState != ECombatState::ECS_Unoccupied || EquippedWeapon == nullptr) return;
+	//CombatState = ECombatState::ECS_TossingGrenade;
 
-	if (PlayerCharacter)
+	/*if (PlayerCharacter)
 	{
 		PlayerCharacter->PlayTossGrenadeMontage();
 		AttachActorToLeftHand(EquippedWeapon);
 		ShowAttachedGrenade(true);
-	}
-	if (PlayerCharacter && !PlayerCharacter->HasAuthority())
+	}*/
+	if (PlayerCharacter )//&& !PlayerCharacter->HasAuthority())
 	{
 		ServerTossGrenadeCosmetic();
 	}
@@ -308,6 +311,7 @@ void UWeaponComponent::BP_TossGrenade()
 
 void UWeaponComponent::ServerTossGrenade_Implementation(const FVector_NetQuantize& Target)
 {
+	
 	if (PlayerCharacter && GrenadeClass && PlayerCharacter->GetAttachedGrenade())
 	{
 		const FVector StartingLocation = PlayerCharacter->GetAttachedGrenade()->GetComponentLocation();
@@ -372,10 +376,7 @@ void UWeaponComponent::OnRep_CombatState()
 			Fire();
 		break;
 	case ECombatState::ECS_TossingGrenade:
-		if (PlayerCharacter && !PlayerCharacter->IsLocallyControlled()) // So that the simulated proxies show the animation . 
-			PlayerCharacter->PlayTossGrenadeMontage();
-		AttachActorToLeftHand(EquippedWeapon);
-		ShowAttachedGrenade(true);
+		TossGrenadeCosmetic();
 		break;
 	
 	}
@@ -446,7 +447,19 @@ void UWeaponComponent::ServerReload_Implementation()
 
 void UWeaponComponent::ServerTossGrenadeCosmetic_Implementation()
 {
+	if (Grenades == 0.f)return;
 	CombatState = ECombatState::ECS_TossingGrenade;
+	//Could definitely use a multicast RPC here instead of Rep Notify
+	TossGrenadeCosmetic();
+	Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
+	StrykerPlayerController = StrykerPlayerController == nullptr ? Cast<AStrykerPlayerController>(PlayerCharacter->Controller) : StrykerPlayerController;
+	if (StrykerPlayerController)
+		StrykerPlayerController->SetGrenadeAmmo(Grenades);//Client RPC
+
+}
+
+void UWeaponComponent::TossGrenadeCosmetic()
+{
 	if (PlayerCharacter)
 	{
 		PlayerCharacter->PlayTossGrenadeMontage();

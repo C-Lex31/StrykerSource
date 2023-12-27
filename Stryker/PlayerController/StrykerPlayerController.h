@@ -65,6 +65,8 @@ public:
 	void SetDeathCount(float Deaths);
 	UFUNCTION(Client ,Reliable)
 	void SetWeaponAmmo(int32 Ammo);
+	UFUNCTION(Client, Reliable)
+	void SetGrenadeAmmo(int32 Count);
 	UFUNCTION(Client ,Reliable)
 	void SetCarriedAmmo(int32 CarriedAmmo);
 	//UFUNCTION(Client ,Reliable)

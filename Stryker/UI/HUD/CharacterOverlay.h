@@ -16,23 +16,35 @@ class STRYKER_API UCharacterOverlay : public UUserWidget
 public:
 	UPROPERTY(meta=(BindWidget))
 	class UProgressBar* HealthBar;
+
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* HealthText;
+
 	UPROPERTY(meta=(BindWidget))
 	class UCrosshair* ObstacleCrosshair;
+
 	UPROPERTY(meta=(BindWidget))
     UTextBlock* ScoreText;
+
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* ScoreAmount;
+
 	UPROPERTY(meta=(BindWidget))
     UTextBlock* DeathsText;
+
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* DeathCount;
+
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* WeaponAmmoAmount;
+
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* CarriedAmmoAmount;
+
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* MatchCountdownText;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* GrenadeAmount;
 	
 };

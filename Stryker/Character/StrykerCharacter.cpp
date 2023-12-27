@@ -110,6 +110,7 @@ void AStrykerCharacter::PossessedBy(AController* NewController)
 		PC->InitializeGameHUD();
 		InitializeCrosshair();
 		PC->SetHealth(Health, MaxHealth);
+		PC->SetGrenadeAmmo(WeaponComponent->GetGrenadeCount());
 	}
 	PS = GetPlayerState<AStrykerPlayerState>();
 	if (PS)
@@ -118,7 +119,8 @@ void AStrykerCharacter::PossessedBy(AController* NewController)
 		PS->AddToDeaths(0.f);
 	}
 	
-		
+	
+	//Cast<AStrykerPlayerController>(Controller)->SetGrenadeAmmo(WeaponComponent->GetGrenadeCount());
 		OnTakeAnyDamage.AddDynamic(this, &AStrykerCharacter::ReceiveDamage);
 }
 
@@ -378,19 +380,19 @@ void AStrykerCharacter::TurnInPlace(float DeltaTime)
 
 void AStrykerCharacter::OnRep_Health()
 {
-	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("%f"), Health));
-//	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, "Damaged");
+
 	UpdateHUDHealth();
-	PlayHitReactMontage();
+	if (GetCombatState() == ECombatState::ECS_Unoccupied)
+		PlayHitReactMontage();
 }
 //Called on server only
 void AStrykerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
+	if (bEliminated) return;
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
-	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("%f"), Health));
-	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, "Damaged");
+
 	UpdateHUDHealth();
-	if(GetCombatState() != ECombatState::ECS_Reloading)
+	if(GetCombatState() == ECombatState::ECS_Unoccupied)
 		PlayHitReactMontage();
 	if (Health==0.f)
     {
@@ -405,7 +407,7 @@ void AStrykerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const 
 }
 void AStrykerCharacter::PlayHitReactMontage()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, "Damaged");
+
 	if (WeaponComponent == nullptr || WeaponComponent->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -740,6 +742,7 @@ void AStrykerCharacter::SetOverlappingWeapon(AWeaponBase* Weapon)
 }
 void AStrykerCharacter::SetCrosshair()
 {
+	if (!LocalPC)return;
 	if (!LocalPC->GetGameHUD() && !WeaponComponent->EquippedWeapon->CrosshairImage)return;
 	if (!Crosshair)return;
 	FSlateBrush Brush;

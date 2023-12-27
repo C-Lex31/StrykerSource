@@ -154,6 +154,19 @@ void AStrykerPlayerController::SetCarriedAmmo_Implementation(int32 CarriedAmmo)
 	}
 }
 
+void AStrykerPlayerController::SetGrenadeAmmo_Implementation(int32 Count)
+{
+	bool bHUDValid =
+		PlayerOverlay &&
+		PlayerOverlay->GrenadeAmount;
+
+	if (bHUDValid)
+	{
+		FString GrenadeCountString = FString::Printf(TEXT("%d"), Count);
+		PlayerOverlay->GrenadeAmount->SetText(FText::FromString(GrenadeCountString));
+	}
+}
+
 void AStrykerPlayerController::SetMatchCountdown(float CountdownTime)
 {
 	bool bHUDValid =
