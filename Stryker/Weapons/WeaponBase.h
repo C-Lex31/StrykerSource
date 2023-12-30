@@ -70,6 +70,7 @@ public:
 	bool bAutomatic = true;
 	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	class USoundCue* EquipSound;
+
 		/**
 	* Enable or disable custom depth
 	*/
@@ -111,6 +112,8 @@ private:
 	class UWidgetComponent* PickupWidget;
 	UPROPERTY(EditAnywhere , Category="WeaponProperties")
 	class UAnimationAsset* WeaponFireAnimation;
+
+
 	 
 	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
 	EWeaponType WeaponType;

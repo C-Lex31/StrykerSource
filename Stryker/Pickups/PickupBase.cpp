@@ -6,6 +6,9 @@
 #include "Sound/SoundCue.h"
 #include "Components/SphereComponent.h"
 #include "Stryker/Enumerations/WeaponTypes.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+
 // Sets default values
 APickupBase::APickupBase()
 {
@@ -27,6 +30,9 @@ APickupBase::APickupBase()
 	PickupMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	PickupMesh->SetRenderCustomDepth(true);
 	PickupMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_PURPLE);
+
+	PickupEffectComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("PickupEffectComponent"));
+	PickupEffectComponent->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -70,6 +76,15 @@ void APickupBase::Destroyed()
 			this,
 			PickupSound,
 			GetActorLocation()
+		);
+	}
+	if (PickupEffect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this,
+			PickupEffect,
+			GetActorLocation(),
+			GetActorRotation()
 		);
 	}
 }

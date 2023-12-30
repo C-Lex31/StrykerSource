@@ -14,6 +14,7 @@
 #include "Camera/CameraComponent.h"
 #include "Sound/SoundCue.h"
 #include "Stryker/Weapons/Projectile.h"
+#include "Animation/BlendSpace.h"
 void UWeaponComponent::InterpFOV(float DeltaTime)
 {
 	if (EquippedWeapon == nullptr) return;

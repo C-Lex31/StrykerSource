@@ -11,15 +11,20 @@ class STRYKER_API APickupBase : public AActor
 {
 	GENERATED_BODY()
 	
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere ,Category ="PickupBaseProperties")
 	class USphereComponent* OverlapSphere;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "PickupBaseProperties")
 	class USoundCue* PickupSound;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "PickupBaseProperties")
 	UStaticMeshComponent* PickupMesh;
 
+	UPROPERTY(VisibleAnywhere, Category = "PickupBaseProperties")
+	class UNiagaraComponent* PickupEffectComponent;
+
+	UPROPERTY(EditAnywhere, Category = "PickupBaseProperties")
+	class UNiagaraSystem* PickupEffect;
 public:	
 	// Sets default values for this actor's properties
 	APickupBase();

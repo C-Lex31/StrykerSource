@@ -17,10 +17,11 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 
 		class AStrykerPlayerController* StrykerPlayerController;
 	    class AStrykerHUD* HUD;
-		UPROPERTY(ReplicatedUsing = OnRep_EquipWeapon)
+
+		UPROPERTY(ReplicatedUsing = OnRep_EquipWeapon )
 		class AWeaponBase* EquippedWeapon; 
 	    class AStrykerCharacter* PlayerCharacter;
-		//ACharacter* PlayerCharacter;
+		
 		UPROPERTY(Replicated)
 		bool bIsAiming;
 		UPROPERTY(EditAnywhere)

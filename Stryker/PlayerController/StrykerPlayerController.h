@@ -59,6 +59,8 @@ public:
 	void ClientHUD();
 	UFUNCTION(Client ,Reliable)
 	void SetHealth(float Health, float MaxHealth);
+	UFUNCTION(Client, Reliable)
+	void SetShield(float Shield, float MaxShield);
 	UFUNCTION(Client ,Reliable)
 	void SetScoreAmount(float Score);
 	UFUNCTION(Client ,Reliable)

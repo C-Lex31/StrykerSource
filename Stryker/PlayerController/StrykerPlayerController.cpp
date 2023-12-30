@@ -89,7 +89,21 @@ void AStrykerPlayerController::SetHealth_Implementation(float Health, float MaxH
 		PlayerOverlay->HealthText->SetText(FText::FromString(HealthString));
 	}
 }
+void AStrykerPlayerController::SetShield_Implementation(float Shield, float MaxShield)
+{
+	bool bHUDValid =
+		PlayerOverlay &&
+		PlayerOverlay->ShieldBar &&
+		PlayerOverlay->ShieldText;
 
+	if (bHUDValid)
+	{
+		const float ShieldPercent = Shield / MaxShield;
+		PlayerOverlay->ShieldBar->SetPercent(ShieldPercent);
+		FString ShieldString = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Shield), FMath::CeilToInt(MaxShield));
+		PlayerOverlay->ShieldText->SetText(FText::FromString(ShieldString));
+	}
+}
 void AStrykerPlayerController::InitializeGameHUD_Implementation()
 {
 	PlayerOverlay = CreateWidget<UCharacterOverlay>(UGameplayStatics::GetPlayerController(GetWorld(), 0), PlayerOverlayClass);
@@ -300,3 +314,5 @@ if (m_MatchState == MatchState::WaitingToStart)
 #endif
 	}
 }
+
+

@@ -13,6 +13,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Stryker/Weapons/WeaponBase.h"
 #include "Stryker/Components/WeaponComponent.h"
+#include "Stryker/Components/BuffComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetStringLibrary.h "
 #include "Blueprint/WidgetLayoutLibrary.h"
@@ -39,6 +40,7 @@ void AStrykerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps((OutLifetimeProps));
 	DOREPLIFETIME_CONDITION(AStrykerCharacter, OverlappedWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AStrykerCharacter, Health);
+	DOREPLIFETIME(AStrykerCharacter, Shield);
 }
 
 
@@ -82,6 +84,9 @@ AStrykerCharacter::AStrykerCharacter()
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
+	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	BuffComponent->SetIsReplicated(true);
+
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(RootComponent);
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
@@ -110,6 +115,7 @@ void AStrykerCharacter::PossessedBy(AController* NewController)
 		PC->InitializeGameHUD();
 		InitializeCrosshair();
 		PC->SetHealth(Health, MaxHealth);
+		PC->SetShield(Shield, MaxShield);
 		PC->SetGrenadeAmmo(WeaponComponent->GetGrenadeCount());
 	}
 	PS = GetPlayerState<AStrykerPlayerState>();
@@ -378,20 +384,44 @@ void AStrykerCharacter::TurnInPlace(float DeltaTime)
 
 #pragma region Health_Dmg
 
-void AStrykerCharacter::OnRep_Health()
+void AStrykerCharacter::OnRep_Health(float LastHealth)
 {
 
 	UpdateHUDHealth();
-	if (GetCombatState() == ECombatState::ECS_Unoccupied)
+	if (Health<LastHealth && GetCombatState() == ECombatState::ECS_Unoccupied)
 		PlayHitReactMontage();
 }
+
+void AStrykerCharacter::OnRep_Shield(float LastShield)
+{
+	UpdateHUDShield();
+	if (Shield < LastShield && GetCombatState() == ECombatState::ECS_Unoccupied)
+		PlayHitReactMontage();
+}
+
 //Called on server only
 void AStrykerCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
 	if (bEliminated) return;
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+
+	float DamageToHealth = Damage;
+	if (Shield > 0.f)
+	{
+		if (Shield >= Damage)
+		{
+			Shield = FMath::Clamp(Shield - Damage, 0.f, MaxShield);
+			DamageToHealth = 0.f;
+		}
+		else
+		{
+			Shield = 0.f;
+			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0.f, Damage);
+		}
+	}
+	Health = FMath::Clamp(Health - DamageToHealth, 0.f, MaxHealth);
 
 	UpdateHUDHealth();
+	UpdateHUDShield();
 	if(GetCombatState() == ECombatState::ECS_Unoccupied)
 		PlayHitReactMontage();
 	if (Health==0.f)
@@ -476,10 +506,18 @@ void AStrykerCharacter::PlayReloadMontage()
 void AStrykerCharacter::UpdateHUDHealth()
 {
 	PC = (PC == nullptr )? Cast<AStrykerPlayerController>(Controller) : PC;
-	//Add Input Mapping Context
 	if (PC)
 	{
 		PC->SetHealth(Health, MaxHealth);
+	}
+}
+
+void AStrykerCharacter::UpdateHUDShield()
+{
+	PC = (PC == nullptr) ? Cast<AStrykerPlayerController>(Controller) : PC;
+	if (PC)
+	{
+		PC->SetShield(Shield, MaxShield);
 	}
 }
 
@@ -601,6 +639,7 @@ void AStrykerCharacter::PlayEliminationMontage()
 		AnimInstance->Montage_Play(EliminationMontage);
 	}
 }
+
 void AStrykerCharacter::OnElimTimerFinished()
 {
 	AStrykerGameMode* StrykerGameMode = GetWorld()->GetAuthGameMode<AStrykerGameMode>();
@@ -679,6 +718,12 @@ void AStrykerCharacter::PostInitializeComponents()
 	if (WeaponComponent)
 	{
 		//WeaponComponent->StrykerCharacter = this;
+	}
+	if (BuffComponent)
+	{
+		BuffComponent->PlayerCharacter = this;
+		BuffComponent->SetInitialSpeeds(GetCharacterMovement()->MaxWalkSpeed, GetCharacterMovement()->MaxWalkSpeedCrouched);
+		BuffComponent->SetInitialJumpZVelocity(GetCharacterMovement()->JumpZVelocity);
 	}
 }
 

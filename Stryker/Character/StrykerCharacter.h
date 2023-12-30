@@ -30,6 +30,9 @@ class AStrykerCharacter : public ACharacter ,public ICrosshairInteractableInterf
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UWeaponComponent* WeaponComponent;
 
+	UPROPERTY(VisibleAnywhere)
+	class UBuffComponent* BuffComponent;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* OverheadWidget;
 #pragma endregion Components
@@ -130,7 +133,20 @@ float MaxHealth = 100.f;
 	float Health = 100.f;
 
 	UFUNCTION()
-	void OnRep_Health();
+	void OnRep_Health(float LastHealth);
+
+	/**
+* Player shield
+*/
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	float MaxShield = 100.f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "Player Stats")
+	float Shield = 100.f;
+
+	UFUNCTION()
+	void OnRep_Shield(float LastShield);
 
 	bool bEliminated = false;
 	void OnElimTimerFinished();
@@ -178,12 +194,19 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE UWeaponComponent* GetWeaponComponent() const { return WeaponComponent; }
+	FORCEINLINE UBuffComponent* GetBuffComponent() const { return BuffComponent; }
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE ETurnInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool GetIsEliminated() const { return bEliminated; }
 	FORCEINLINE bool GetCrosshairHasObstacle() const { return bCrosshairHasObstacle; }
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
+	FORCEINLINE float GetHealth() { return Health ; }
+	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
+	FORCEINLINE float GetMaxHealth() { return MaxHealth; }
+	FORCEINLINE float GetShield() { return Shield; }
+	FORCEINLINE void SetShield(float Amount) { Shield = Amount; }
+	FORCEINLINE float GetMaxShield() { return MaxShield; }
 #pragma endregion InlineGetters
 
     #pragma region Getters
@@ -224,6 +247,8 @@ public:
 
 	void SetOverlappingWeapon(AWeaponBase* Weapon);
 	void SetCrosshair();
+	void UpdateHUDHealth();
+	void UpdateHUDShield();
 
 	void PlayEliminationMontage();
 	void PlayHitReactMontage();
@@ -254,7 +279,7 @@ protected:
 	void CrosshairLogicUpdate();
 	void UpdateCrosshair(float DeltaTime);
 	void CenterCrosshair();
-	void UpdateHUDHealth();
+	
 
 	FVector TraceCameraAim();
 	
