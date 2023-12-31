@@ -114,9 +114,15 @@ void AStrykerCharacter::PossessedBy(AController* NewController)
 
 		PC->InitializeGameHUD();
 		InitializeCrosshair();
+		
 		PC->SetHealth(Health, MaxHealth);
 		PC->SetShield(Shield, MaxShield);
-		PC->SetGrenadeAmmo(WeaponComponent->GetGrenadeCount());
+		if (WeaponComponent)
+		{
+			PC->SetGrenadeAmmo(WeaponComponent->GetGrenadeCount());
+			
+		}
+
 	}
 	PS = GetPlayerState<AStrykerPlayerState>();
 	if (PS)
@@ -135,7 +141,7 @@ void AStrykerCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	LocalPC = Cast<AStrykerPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	LocalPC = Cast<AStrykerPlayerController>(Controller);
 	//Add Input Mapping Context
 	if (const ULocalPlayer* Player = (GEngine && GetWorld()) ? GEngine->GetFirstGamePlayer(GetWorld()) : nullptr)
 	{
@@ -148,6 +154,14 @@ void AStrykerCharacter::BeginPlay()
 	if (AttachedGrenade)
 	{
 		AttachedGrenade->SetVisibility(false);
+	}
+
+	if (bSpawnWithDefaultWeapon && LocalPC)
+	{
+		SpawnDefaultWeapon();
+		if (WeaponComponent->EquippedWeapon)
+			LocalPC->SetWeaponAmmo(WeaponComponent->EquippedWeapon->GetAmmo());
+		LocalPC->SetCarriedAmmo(WeaponComponent->CarriedAmmo);
 	}
 }
 
@@ -521,6 +535,21 @@ void AStrykerCharacter::UpdateHUDShield()
 	}
 }
 
+void AStrykerCharacter::SpawnDefaultWeapon()
+{
+	AStrykerGameMode* StrykerGameMode = Cast<AStrykerGameMode>(UGameplayStatics::GetGameMode(this));
+	UWorld* World = GetWorld();
+	if (StrykerGameMode && World && !bEliminated && DefaultWeaponClass)
+	{
+		AWeaponBase* StartingWeapon = World->SpawnActor<AWeaponBase>(DefaultWeaponClass);
+		StartingWeapon->bDestroyWeapon = true;
+		if (WeaponComponent)
+		{
+			WeaponComponent->EquipWeapon(StartingWeapon);
+		}
+	}
+}
+
 #pragma endregion Health_Dmg
 
 #pragma region Elimination
@@ -530,6 +559,14 @@ void AStrykerCharacter::ServerEliminated()
 	if (WeaponComponent && WeaponComponent->EquippedWeapon)
 	{
 		WeaponComponent->EquippedWeapon->DropWeapon();
+		if (WeaponComponent->EquippedWeapon->bDestroyWeapon)
+		{
+			WeaponComponent->EquippedWeapon->Destroy();
+		}
+		else
+		{
+			WeaponComponent->EquippedWeapon->DropWeapon();
+		}
 	}
 //	Client_Eliminated();
 	MulticastEliminated();
@@ -717,7 +754,9 @@ void AStrykerCharacter::PostInitializeComponents()
 
 	if (WeaponComponent)
 	{
-		//WeaponComponent->StrykerCharacter = this;
+		WeaponComponent->PlayerCharacter = this;
+	
+			
 	}
 	if (BuffComponent)
 	{

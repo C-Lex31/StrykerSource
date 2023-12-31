@@ -181,6 +181,15 @@ float MaxHealth = 100.f;
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* AttachedGrenade;
 
+	/**
+* Default weapon
+*/
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeaponBase> DefaultWeaponClass;
+	UPROPERTY(EditAnywhere)
+	bool bSpawnWithDefaultWeapon = false;
+
 	class AStrykerPlayerController* PC ;
 	class AStrykerPlayerState* PS;
 	AStrykerPlayerController* LocalPC;
@@ -249,6 +258,7 @@ public:
 	void SetCrosshair();
 	void UpdateHUDHealth();
 	void UpdateHUDShield();
+	void SpawnDefaultWeapon();
 
 	void PlayEliminationMontage();
 	void PlayHitReactMontage();

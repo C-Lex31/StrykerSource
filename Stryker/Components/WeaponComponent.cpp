@@ -36,6 +36,7 @@ void UWeaponComponent::InterpFOV(float DeltaTime)
 
 void UWeaponComponent::InitializeCarriedAmmo()
 {
+	
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, StartingRLAmmo);
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_SMG, StartingSMGAmmo);
@@ -127,7 +128,7 @@ UWeaponComponent::UWeaponComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-	PlayerCharacter = Cast<AStrykerCharacter>(GetOwner());
+	//PlayerCharacter = Cast<AStrykerCharacter>(GetOwner());
 	BaseWalkSpeed = 800;
 	AimWalkSpeed = 400;
 	// ...
@@ -527,7 +528,7 @@ void UWeaponComponent::UpdateCarriedAmmo()
 	{
 		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
 	}
-
+	
 	StrykerPlayerController = StrykerPlayerController == nullptr ? Cast<AStrykerPlayerController>(PlayerCharacter->Controller) : StrykerPlayerController;
 	if (StrykerPlayerController)
 		StrykerPlayerController->SetCarriedAmmo(CarriedAmmo);

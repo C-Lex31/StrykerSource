@@ -93,7 +93,7 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 	int32 MaxGrenades = 10.f;
 	
 	UPROPERTY(Replicated)
-	int32 Grenades = 5.f;
+	int32 Grenades = 6.f;
 
 	void InitializeCarriedAmmo();
 	void UpdateAmmoValues();

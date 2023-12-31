@@ -25,6 +25,9 @@ class STRYKER_API APickupBase : public AActor
 
 	UPROPERTY(EditAnywhere, Category = "PickupBaseProperties")
 	class UNiagaraSystem* PickupEffect;
+
+	FTimerHandle BindOverlapTimer;
+	void BindOverlapTimerFinished();
 public:	
 	// Sets default values for this actor's properties
 	APickupBase();
@@ -45,6 +48,8 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	float BaseTurnRate = 45.f;
+
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
