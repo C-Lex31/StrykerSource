@@ -11,6 +11,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "Stryker/Interfaces/PlayerControllerInterface.h"
+#include "Stryker/PlayerState/StrykerPlayerState.h"
 #include "Stryker/StrykerGameMode.h"
 #include "Net/UnrealNetwork.h"
 void AStrykerPlayerController::BeginPlay()
@@ -25,6 +26,7 @@ void AStrykerPlayerController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	SetHUDTime();
+
 }
 
 void AStrykerPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -266,8 +268,9 @@ void AStrykerPlayerController::ReceivedPlayer()
 	{
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 	}
-	FTimerHandle TH_SyncTimeWithServer;
+
 	GetWorldTimerManager().SetTimer(TH_SyncTimeWithServer, this, &ThisClass::CheckTimeSync , TimeSyncFrequency, true, -1.f);
+	GetWorldTimerManager().SetTimer(TH_CheckPing, this, &ThisClass::CheckPing, CheckPingFrequency, true, -1.f);
 }
 
 void AStrykerPlayerController::CheckTimeSync()
@@ -276,6 +279,56 @@ void AStrykerPlayerController::CheckTimeSync()
 	{
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());	
 	}
+}
+
+void AStrykerPlayerController::HighPingWarning()
+{
+	bool bHUDValid =
+		PlayerOverlay &&
+		PlayerOverlay->HighPingWarningImage &&
+		PlayerOverlay->HighPingPulse;
+
+	if (bHUDValid)
+	{
+		PlayerOverlay->PlayAnimation(PlayerOverlay->HighPingPulse,0.f,5);
+	}
+}
+
+void AStrykerPlayerController::StopHighPingWarning()
+{
+	bool bHUDValid =
+		PlayerOverlay &&
+		PlayerOverlay->HighPingWarningImage &&
+		PlayerOverlay->HighPingPulse;
+	if (bHUDValid)
+	{
+		PlayerOverlay->StopAnimation(PlayerOverlay->HighPingPulse);
+	}
+
+}
+
+void AStrykerPlayerController::CheckPing()
+{
+	PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
+	if (PlayerState)
+	{
+		if (PlayerState->GetPing() * 4 > HighPingThreshold) // ping is compressed; it's actually ping / 4
+		{
+			HighPingWarning();
+			PingAnimationRunningTime = 0.f;
+		}
+	}
+
+	bool bHighPingAnimationPlaying =
+		PlayerOverlay &&
+		PlayerOverlay->HighPingPulse &&
+		PlayerOverlay->IsAnimationPlaying(PlayerOverlay->HighPingPulse);
+
+	if (bHighPingAnimationPlaying)
+	{
+		GetWorldTimerManager().SetTimer(TH_HighPingPulseDuration, this, &ThisClass::StopHighPingWarning, HighPingDuration, false, -1.f);
+	}
+
 }
 
 void AStrykerPlayerController::ClientJoinMidGame_Implementation(FName State , float Warmup , float MatchDuration , float LevelStart)

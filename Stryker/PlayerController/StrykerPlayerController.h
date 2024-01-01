@@ -25,6 +25,20 @@ class STRYKER_API AStrykerPlayerController : public APlayerController
 
 	UPROPERTY(ReplicatedUsing = OnRep_MatchState)
 	FName m_MatchState;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingDuration = 5.f;
+
+	UPROPERTY(EditAnywhere)
+	float CheckPingFrequency = 15.f;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingThreshold = 60.f;
+
+	float PingAnimationRunningTime = 0.f;
+
+
+	FTimerHandle TH_SyncTimeWithServer, TH_CheckPing , TH_HighPingPulseDuration;
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
@@ -53,6 +67,10 @@ protected:
 
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidGame(FName State, float Warmup, float MatchDuration, float LevelStart);
+
+	void HighPingWarning();
+	void StopHighPingWarning();
+	void CheckPing();
 
 public:
 	UFUNCTION(Client ,Reliable)
