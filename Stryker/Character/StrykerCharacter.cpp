@@ -186,6 +186,8 @@ void AStrykerCharacter::Tick(float DeltaSeconds)
 
 #pragma region TickMethods
 
+
+
 FVector AStrykerCharacter::TraceCameraAim()
 {
 	if (!Crosshair) return FVector{ 0 };
@@ -556,18 +558,7 @@ void AStrykerCharacter::SpawnDefaultWeapon()
 //Called from game mode and game mode exists on server only
 void AStrykerCharacter::ServerEliminated()
 {
-	if (WeaponComponent && WeaponComponent->EquippedWeapon)
-	{
-		WeaponComponent->EquippedWeapon->DropWeapon();
-		if (WeaponComponent->EquippedWeapon->bDestroyWeapon)
-		{
-			WeaponComponent->EquippedWeapon->Destroy();
-		}
-		else
-		{
-			WeaponComponent->EquippedWeapon->DropWeapon();
-		}
-	}
+	DropOrDestroyWeapons();
 //	Client_Eliminated();
 	MulticastEliminated();
 	GetWorldTimerManager().SetTimer(
@@ -657,7 +648,32 @@ void AStrykerCharacter::MulticastEliminated_Implementation()
 		ShowSniperScopeWidget(false);
 	}
 }
-
+void AStrykerCharacter::DropOrDestroyWeapon(AWeaponBase* Weapon)
+{
+	if (Weapon == nullptr) return;
+	if (Weapon->bDestroyWeapon)
+	{
+		Weapon->Destroy();
+	}
+	else
+	{
+		Weapon->DropWeapon();
+	}
+}
+void AStrykerCharacter::DropOrDestroyWeapons()
+{
+	if (WeaponComponent)
+	{
+		if (WeaponComponent->EquippedWeapon)
+		{
+			DropOrDestroyWeapon(WeaponComponent->EquippedWeapon);
+		}
+		if (WeaponComponent->SecondaryWeapon)
+		{
+			DropOrDestroyWeapon(WeaponComponent->SecondaryWeapon);
+		}
+	}
+}
 void AStrykerCharacter::Destroyed()
 {
 	Super::Destroyed();
@@ -722,7 +738,7 @@ void AStrykerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AStrykerCharacter::Look);
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &AStrykerCharacter::EventInteract);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AStrykerCharacter::EventInteract);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &AStrykerCharacter::EventCrouch);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &AStrykerCharacter::EventAimStart);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &AStrykerCharacter::EventAimEnd);
@@ -855,8 +871,17 @@ void AStrykerCharacter::ServerEquip_Implementation()
 {
 	if (WeaponComponent)
 	{
-		WeaponComponent->EquipWeapon(OverlappedWeapon);
+		if (OverlappedWeapon)
+		{
+			WeaponComponent->EquipWeapon(OverlappedWeapon);
+		}
+		else if (WeaponComponent->GetShouldSwapWeapons())
+		{
+			WeaponComponent->SwapWeapons();
+		}
 	}
+
+
 }
 
 #pragma endregion Interaction
@@ -949,17 +974,10 @@ void AStrykerCharacter::Look(const FInputActionValue& Value)
 
 void AStrykerCharacter::EventInteract()
 {
-	if (WeaponComponent)
-	{
-		if (HasAuthority())
-		{
-			WeaponComponent->EquipWeapon(OverlappedWeapon);
-		}
-		else
-		{
-			ServerEquip();
-		}
-	}
+
+		if (WeaponComponent->CombatState == ECombatState::ECS_Unoccupied )
+			ServerEquip();	
+
 }
 
 void AStrykerCharacter::EventReload()

@@ -11,9 +11,10 @@
 UENUM(BlueprintType)
 enum class EWeaponState :uint8
 {
-	Initial ,
-	Equipped,
-	Dropped
+	EWS_Initial ,
+	EWS_EquippedPrimary,
+	EWS_EquippedSecondary,
+	EWS_Dropped
 };
 
 UCLASS()
@@ -41,6 +42,7 @@ public:
 	FORCEINLINE int32 GetMagCapacity() { return MagCapacity; }
 	FORCEINLINE FName GetRightHandSocket() { return RightHandSocket; }
 	FORCEINLINE FName GetLeftHandSocket() { return LeftHandSocket; }
+	FORCEINLINE FName GetHolsterSocket() { return HolsterSocket; }
 
 	/**
 	* Textures for the weapon crosshairs
@@ -80,6 +82,11 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void OnWeaponStateSet();
+	virtual void OnEquippedPrimary();
+	virtual void OnDropped();
+	virtual void OnEquippedSecondary();
 
 	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
 	USkeletalMeshComponent* WeaponMesh;
@@ -125,6 +132,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "WeaponProperties|AttachmentSockets")
 	FName LeftHandSocket = FName("LeftHandSocket");
+
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties|AttachmentSockets")
+	FName HolsterSocket = FName("HolsterSocket");
 
 
 	class AStrykerCharacter* OwnerCharacter;

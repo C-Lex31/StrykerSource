@@ -157,21 +157,37 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UWeaponComponent, EquippedWeapon);
+	DOREPLIFETIME(UWeaponComponent, SecondaryWeapon);
 	DOREPLIFETIME(UWeaponComponent, bIsAiming);
 	DOREPLIFETIME_CONDITION(UWeaponComponent, CarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME(UWeaponComponent, CombatState);
 	DOREPLIFETIME(UWeaponComponent, Grenades);
 }
 //CALLED ON SERVER from StrykerCharacter.cpp
-void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEqip)
+void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEquip)
 {
-	if (PlayerCharacter == nullptr || WeaponToEqip == nullptr) return;
+	if (PlayerCharacter == nullptr || WeaponToEquip == nullptr) return;
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
 
-	if (EquippedWeapon)
-		EquippedWeapon->DropWeapon();
-	EquippedWeapon = WeaponToEqip;
-	EquippedWeapon->SetWeaponState(EWeaponState::Equipped);
+
+	if (EquippedWeapon != nullptr && SecondaryWeapon == nullptr)
+	{
+		EquipSecondaryWeapon(WeaponToEquip);
+	}
+	else
+	{
+		EquipPrimaryWeapon(WeaponToEquip);
+	}
+	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
+	PlayerCharacter->bUseControllerRotationYaw = true;
+}
+void UWeaponComponent::SwapWeapons()
+{
+	AWeaponBase* temp = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = temp;
+
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_EquippedPrimary);
 	AttachActorToRightHand(EquippedWeapon);
 	EquippedWeapon->SetOwner(PlayerCharacter);
 	EquippedWeapon->SetHUDAmmo();
@@ -179,21 +195,58 @@ void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEqip)
 	if (EquippedWeapon->GetIsEmpty())
 		Reload();
 
-	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
-	PlayerCharacter->bUseControllerRotationYaw = true;
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToBackpack(SecondaryWeapon);
+}
+void UWeaponComponent::EquipPrimaryWeapon(AWeaponBase* WeaponToEquip)
+{
+	if (WeaponToEquip == nullptr)return;
+	if (EquippedWeapon)
+		EquippedWeapon->DropWeapon();
+	EquippedWeapon = WeaponToEquip;
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_EquippedPrimary);
+	AttachActorToRightHand(EquippedWeapon);
+	EquippedWeapon->SetOwner(PlayerCharacter);
+	EquippedWeapon->SetHUDAmmo();
+	UpdateCarriedAmmo();
+	if (EquippedWeapon->GetIsEmpty())
+		Reload();
+
+
 	PlayerCharacter->SetCrosshair();
 	PlayEquipWeaponSound(EquippedWeapon);
+}
+
+void UWeaponComponent::EquipSecondaryWeapon(AWeaponBase* WeaponToEquip)
+{
+	if (WeaponToEquip == nullptr) return;
+	SecondaryWeapon = WeaponToEquip;
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToBackpack(WeaponToEquip);
+	PlayEquipWeaponSound(WeaponToEquip);
+	SecondaryWeapon->SetOwner(PlayerCharacter);
 }
 
 void UWeaponComponent::OnRep_EquipWeapon()
 {
 	if (EquippedWeapon)
 	{
-		EquippedWeapon->SetWeaponState(EWeaponState::Equipped);
+		EquippedWeapon->SetWeaponState(EWeaponState::EWS_EquippedPrimary);
 		AttachActorToRightHand(EquippedWeapon);
 		PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 		PlayerCharacter->bUseControllerRotationYaw = true;
 		PlayerCharacter->SetCrosshair();
+		PlayEquipWeaponSound(EquippedWeapon);
+		EquippedWeapon->EnableCustomDepth(false);
+	}
+}
+
+void UWeaponComponent::OnRep_SecondaryWeapon()
+{
+	if (SecondaryWeapon && PlayerCharacter)
+	{
+		SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+		AttachActorToBackpack(SecondaryWeapon);
 		PlayEquipWeaponSound(EquippedWeapon);
 	}
 }
@@ -215,6 +268,16 @@ void UWeaponComponent::AttachActorToLeftHand(AActor* ActorToAttach)
 	if (HandSocket)
 	{
 		HandSocket->AttachActor(ActorToAttach, (Cast<ACharacter>(GetOwner()))->GetMesh());
+	}
+}
+
+void UWeaponComponent::AttachActorToBackpack(AActor* ActorToAttach)
+{
+	if (PlayerCharacter == nullptr || PlayerCharacter->GetMesh() == nullptr || ActorToAttach == nullptr) return;
+	const USkeletalMeshSocket* HolsterSocket = PlayerCharacter->GetMesh()->GetSocketByName(SecondaryWeapon->GetHolsterSocket());
+	if (HolsterSocket)
+	{
+		HolsterSocket->AttachActor(ActorToAttach, PlayerCharacter->GetMesh());
 	}
 }
 
@@ -553,6 +616,10 @@ void UWeaponComponent::ShowAttachedGrenade(bool bShowGrenade)
 		PlayerCharacter->GetAttachedGrenade()->SetVisibility(bShowGrenade);
 	}
 }
+
+
+
+
 
 
 

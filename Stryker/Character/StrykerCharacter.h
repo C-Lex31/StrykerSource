@@ -290,7 +290,8 @@ protected:
 	void UpdateCrosshair(float DeltaTime);
 	void CenterCrosshair();
 	
-
+	void DropOrDestroyWeapon(AWeaponBase* Weapon);
+	void DropOrDestroyWeapons();
 	FVector TraceCameraAim();
 	
 	UFUNCTION(Client ,Reliable)

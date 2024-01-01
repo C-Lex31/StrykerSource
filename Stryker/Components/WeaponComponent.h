@@ -20,6 +20,10 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 
 		UPROPERTY(ReplicatedUsing = OnRep_EquipWeapon )
 		class AWeaponBase* EquippedWeapon; 
+
+		UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
+		AWeaponBase* SecondaryWeapon;
+
 	    class AStrykerCharacter* PlayerCharacter;
 		
 		UPROPERTY(Replicated)
@@ -105,9 +109,11 @@ public:
 	UWeaponComponent();
 	friend class AStrykerCharacter ;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
-	void EquipWeapon(AWeaponBase* WeaponToEqip);
+	void EquipWeapon(AWeaponBase* WeaponToEquip);
+	void SwapWeapons();
 	void AttachActorToRightHand(AActor* ActorToAttach);
 	void AttachActorToLeftHand(AActor* ActorToAttach);
+	void AttachActorToBackpack(AActor* ActorToAttach);
 	void FireButtonPressed(bool bPressed);
 	void JumpToShotgunEnd();
 
@@ -115,6 +121,7 @@ public:
 //	FORCEINLINE float GetCrosshairShootingFactor() { return CrosshairShootingFactor; }
 	FORCEINLINE void SetHitTarget(FVector Target) { HitTarget = Target; }
 	FORCEINLINE int32 GetGrenadeCount() { return Grenades; }
+	FORCEINLINE bool GetShouldSwapWeapons() {return EquippedWeapon != nullptr && SecondaryWeapon != nullptr && !bIsAiming;}
 	void Fire();
 	void Reload();
 	void TossGrenade();
@@ -163,6 +170,9 @@ protected:
 	void OnRep_EquipWeapon();
 
 	UFUNCTION()
+	void OnRep_SecondaryWeapon();
+
+	UFUNCTION()
 	void OnRep_CarriedAmmo();
 
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
@@ -173,5 +183,7 @@ protected:
 	void UpdateCarriedAmmo();
 	void PlayEquipWeaponSound(AWeaponBase* WeaponToEquip);
 	void ShowAttachedGrenade(bool bShowGrenade);
+	void EquipPrimaryWeapon(AWeaponBase* WeaponToEquip);
+	void EquipSecondaryWeapon(AWeaponBase* WeaponToEquip);
 	void TossGrenadeCosmetic();
 };
