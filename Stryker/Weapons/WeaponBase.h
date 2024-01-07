@@ -17,6 +17,16 @@ enum class EWeaponState :uint8
 	EWS_Dropped
 };
 
+UENUM(BlueprintType)
+enum class EFireType : uint8
+{
+	EFT_HitScan UMETA(DisplayName = "Hit Scan Weapon"),
+	EFT_Projectile UMETA(DisplayName = "Projectile Weapon"),
+	EFT_Shotgun UMETA(DisplayName = "Shotgun Weapon"),
+
+	EFT_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
 UCLASS()
 class STRYKER_API AWeaponBase : public AActor
 {
@@ -31,6 +41,7 @@ public:
 	virtual void Fire(const FVector& HitTarget);
 	void DropWeapon();
 	void AddAmmo(int32 AmmoToAdd);
+	FVector TraceEndWithScatter( const FVector& HitTarget);
 	void ShowPickupWidget(bool bPickupWidget);
 	void SetWeaponState(EWeaponState State);
 	void SetHUDAmmo(); //Also called on server from weapon component
@@ -79,6 +90,12 @@ public:
 	void EnableCustomDepth(bool bEnable);
 
 	bool bDestroyWeapon = false;
+
+	UPROPERTY(EditAnywhere)
+	EFireType FireType;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	bool bUseScatter = false;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -109,6 +126,21 @@ protected:
 		int32 OtherBodyIndex
 		) ;
 	
+	/**
+* Trace end with scatter
+*/
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float DistanceToSphere = 800.f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float SphereRadius = 75.f;
+
+	UPROPERTY(EditAnywhere)
+	bool bDrawDebugScatterTrace = false;
+
+
+
 private:
 
 	UPROPERTY(VisibleAnywhere , Category="WeaponProperties")

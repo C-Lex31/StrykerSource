@@ -8,36 +8,14 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 #include "Stryker/Stryker.h"
-FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget)
-{
-	FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
-	FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
-	FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
-	FVector EndLoc = SphereCenter + RandVec;
-	FVector ToEndLoc = EndLoc - TraceStart;
 
-	if (bDrawDebugScatterTrace)
-	{
-		DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Red, true);
-		DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, true);
-		DrawDebugLine(
-			GetWorld(),
-			TraceStart,
-			FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size()),// Dividing to prevent overflow of x,y,z values as TRACE_LENGTH is a large value.
-			FColor::Cyan,
-			true);
-	}
-	
-
-	return FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size());
-}
 
 void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit)
 {
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		FVector End = bUseScatter ? TraceEndWithScatter(TraceStart, HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f;
+		FVector End =  TraceStart + (HitTarget - TraceStart) * 1.25f;
 
 		World->LineTraceSingleByChannel(
 			OutHit,
@@ -51,6 +29,9 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 		{
 			BeamEnd = OutHit.ImpactPoint;
 		}
+
+		DrawDebugSphere(GetWorld(), BeamEnd, 16.f, 12, FColor::Orange, true);
+
 		if (BeamParticles)
 		{
 			UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
@@ -85,28 +66,10 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		ActorsToIgnore.Add(OwnerPawn);
 		ActorsToIgnore.Add((this));
 		FVector SocketStart = SocketTransform.GetLocation();
-		FVector2D ViewportSize;
-		if (GEngine && GEngine->GameViewport)
-		{
-			GEngine->GameViewport->GetViewportSize(ViewportSize);
-		}
-		FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
-		FVector CrosshairWorldPosition;
-		FVector CrosshairWorldDirection;
-		 UGameplayStatics::DeprojectScreenToWorld(
-			UGameplayStatics::GetPlayerController(this, 0),
-			CrosshairLocation,
-			CrosshairWorldPosition,
-			CrosshairWorldDirection);
-		 FVector CenterStart = CrosshairWorldPosition;
-		float DistanceToCharacter = (PlayerCharacter->GetActorLocation() - CenterStart).Size();
-		CenterStart += CrosshairWorldDirection * (DistanceToCharacter + 100.f);
 
 	   //	FVector CenterEnd = CenterStart + CrosshairWorldDirection * 80000.f;
 		//	FVector End = Start + UKismetMathLibrary::GetForwardVector(HitTarget) * 80000.f;
 		FVector Start = PlayerCharacter->GetCrosshairHasObstacle() ? SocketStart : SocketStart;
-		FVector End = Start + (HitTarget - Start) * 1.25f;
-
 		//if (World)
 		//{
 			/*World->LineTraceSingleByChannel(

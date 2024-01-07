@@ -186,4 +186,7 @@ protected:
 	void EquipPrimaryWeapon(AWeaponBase* WeaponToEquip);
 	void EquipSecondaryWeapon(AWeaponBase* WeaponToEquip);
 	void TossGrenadeCosmetic();
+	void FireProjectileWeapon();
+	void FireHitScanWeapon();
+	void FireShotgun();
 };

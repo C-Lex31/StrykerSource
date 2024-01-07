@@ -283,10 +283,6 @@ void AStrykerCharacter::UpdateCrosshair(float DeltaTime)
 void AStrykerCharacter::CrosshairLogicUpdate()
 {
 	if (!WeaponComponent->EquippedWeapon || !Crosshair) return;
-	//AStrykerPlayerController* PlayerController = Cast<AStrykerPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-
-//	if (IsLocallyControlled())
-		//UKismetSystemLibrary::PrintString(GetWorld(), UKismetSystemLibrary::GetDisplayName(PC));
 
 	const USkeletalMeshSocket* MuzzleSocket = WeaponComponent->EquippedWeapon->GetWeaponMesh()->GetSocketByName("Muzzle");
 	FHitResult HitResult;
@@ -304,7 +300,7 @@ void AStrykerCharacter::CrosshairLogicUpdate()
 		UKismetSystemLibrary::LineTraceSingle(GetWorld(), TraceStart, TraceEnd, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIgnore, EDrawDebugTrace::ForDuration, HitResult, true, FColor::Red, FColor::Green, 0.05f);
 		CrosshairLocation = HitResult.bBlockingHit ? HitResult.Location : CameraTraceEndLocation;
 		bCrosshairHasObstacle = UKismetMathLibrary::NotEqual_VectorVector(CameraTraceEndLocation, CrosshairLocation, 1.f);
-		WeaponComponent->SetHitTarget(bCrosshairHasObstacle ? HitResult.Location : CameraTraceEndLocation);
+		WeaponComponent->SetHitTarget(bCrosshairHasObstacle ? HitResult.ImpactPoint : CameraTraceEndLocation);
 		if (bCrosshairHasObstacle)
 		{
 			if (LocalPC && LocalPC->GetGameHUD() && LocalPC->GetGameHUD()->ObstacleCrosshair)

@@ -9,6 +9,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Stryker/PlayerController/StrykerPlayerController.h"
 #include "Stryker/Components/WeaponComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps((OutLifetimeProps));
@@ -228,7 +229,8 @@ void AWeaponBase::Fire(const FVector& HitTarget)
 	{
 		WeaponMesh->PlayAnimation(WeaponFireAnimation, false);
 	}
-	SpendRound();
+	if(HasAuthority())
+		SpendRound();
 }
 
 void AWeaponBase::DropWeapon()
@@ -246,5 +248,32 @@ void AWeaponBase::AddAmmo(int32 AmmoToAdd)
 	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
 	SetHUDAmmo();
 }
+FVector AWeaponBase::TraceEndWithScatter( const FVector& HitTarget)
+{
+	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName("Muzzle");
+	if (MuzzleSocket == nullptr) return FVector();
+	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
+	FVector TraceStart = SocketTransform.GetLocation();
 
+	FVector ToTargetNormalized = (HitTarget - TraceStart).GetSafeNormal();
+	FVector SphereCenter = TraceStart + ToTargetNormalized * DistanceToSphere;
+	FVector RandVec = UKismetMathLibrary::RandomUnitVector() * FMath::FRandRange(0.f, SphereRadius);
+	FVector EndLoc = SphereCenter + RandVec;
+	FVector ToEndLoc = EndLoc - TraceStart;
+
+	if (bDrawDebugScatterTrace)
+	{
+		DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Red, true);
+		DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, true);
+		DrawDebugLine(
+			GetWorld(),
+			TraceStart,
+			FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size()),// Dividing to prevent overflow of x,y,z values as TRACE_LENGTH is a large value.
+			FColor::Cyan,
+			true);
+	}
+
+
+	return FVector(TraceStart + ToEndLoc * TRACE_LENGTH / ToEndLoc.Size());
+}
 

@@ -183,6 +183,7 @@ void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEquip)
 }
 void UWeaponComponent::SwapWeapons()
 {
+	if (CombatState != ECombatState::ECS_Unoccupied)return;
 	AWeaponBase* temp = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
 	SecondaryWeapon = temp;
@@ -299,12 +300,44 @@ void UWeaponComponent::Fire()
 		{
 			CrosshairShootingFactor = 0.5f;
 			
-			if (!PlayerCharacter->HasAuthority()) LocalFire(HitTarget);
-			 ServerFire(HitTarget);
-			
+			 switch (EquippedWeapon->FireType)
+			 {
+			 case EFireType::EFT_Projectile:
+				 FireProjectileWeapon();
+				 break;
+			 case EFireType::EFT_HitScan:
+				 FireHitScanWeapon();
+				 break;
+			 case EFireType::EFT_Shotgun:
+				 FireShotgun();
+				 break;
+			 }
 		}
 		StartFireTimer();
 	}
+}
+void UWeaponComponent::FireProjectileWeapon()
+{
+	if (EquippedWeapon && PlayerCharacter)
+	{
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->TraceEndWithScatter(HitTarget) : HitTarget;
+		if (!PlayerCharacter->HasAuthority()) LocalFire(HitTarget);
+		ServerFire(HitTarget);
+	}
+}
+
+void UWeaponComponent::FireHitScanWeapon()
+{
+	if (EquippedWeapon && PlayerCharacter)
+	{
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->TraceEndWithScatter(HitTarget) : HitTarget;
+		if (!PlayerCharacter->HasAuthority()) LocalFire(HitTarget);
+		ServerFire(HitTarget);
+	}
+}
+
+void UWeaponComponent::FireShotgun()
+{
 }
 
 void UWeaponComponent::Reload()
@@ -489,7 +522,7 @@ void UWeaponComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 void UWeaponComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	
-	if (PlayerCharacter  && PlayerCharacter->IsLocallyControlled() && !PlayerCharacter->HasAuthority()) return;
+	if (PlayerCharacter  && PlayerCharacter->IsLocallyControlled() && !PlayerCharacter->HasAuthority()) return; // Not playing Fire for Player who fired weapon
 	if (PlayerCharacter && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
 	{
 		PlayerCharacter->PlayFireMontage(bIsAiming);
@@ -532,6 +565,7 @@ void UWeaponComponent::TossGrenadeCosmetic()
 		ShowAttachedGrenade(true);
 	}
 }
+
 
 
 
