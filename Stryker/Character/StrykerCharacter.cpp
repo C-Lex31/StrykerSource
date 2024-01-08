@@ -1,36 +1,45 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+
 
 #include "StrykerCharacter.h"
-#include "Camera/CameraComponent.h"
+#include "Stryker/Weapons/WeaponBase.h"
+#include "Stryker/Components/WeaponComponent.h"
+#include "Stryker/Components/BuffComponent.h"
+#include "Stryker/Stryker.h"
+#include "StrykerAnimInstance.h"
+#include "Stryker/PlayerController/StrykerPlayerController.h"
+#include "Stryker/StrykerGameMode.h"
+#include "Stryker/UI/HUD/Crosshair.h"
+#include "Stryker/UI/HUD/CharacterOverlay.h"
+#include "Stryker/PlayerState/StrykerPlayerState.h"
+#include "Stryker/Enumerations/WeaponTypes.h"
+
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/Image.h"
+#include "Components/BoxComponent.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Net/UnrealNetwork.h"
-#include "Stryker/Weapons/WeaponBase.h"
-#include "Stryker/Components/WeaponComponent.h"
-#include "Stryker/Components/BuffComponent.h"
+#include "Camera/CameraComponent.h"
+
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetStringLibrary.h "
-#include "Blueprint/WidgetLayoutLibrary.h"
-#include "Components/CanvasPanelSlot.h"
-#include "Stryker/Stryker.h"
-#include "StrykerAnimInstance.h"
-#include "Stryker/PlayerController/StrykerPlayerController.h"
-#include "Stryker/StrykerGameMode.h"
 #include "Kismet/GameplayStatics.h"
+
+#include "Blueprint/WidgetLayoutLibrary.h"
+
 #include "Engine/SkeletalMeshSocket.h"
-#include"Stryker/UI/HUD/Crosshair.h"
-#include "Stryker/UI/HUD/CharacterOverlay.h"
+
 #include "Sound/SoundCue.h"
 #include "Particles/ParticleSystemComponent.h"
-#include "Stryker/PlayerState/StrykerPlayerState.h"
-#include "Stryker/Enumerations/WeaponTypes.h"
-#include "Components/Image.h"
+
+
 //////////////////////////////////////////////////////////////////////////
 // AStrykerCharacter
 
@@ -102,6 +111,85 @@ AStrykerCharacter::AStrykerCharacter()
 	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Attached Grenade"));
 	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+#pragma region HitboxesForSSR
+	/**
+* Hit boxes for server-side rewind
+*/
+	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
+	head->SetupAttachment(GetMesh(), FName("head"));
+	head->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	pelvis = CreateDefaultSubobject<UBoxComponent>(TEXT("pelvis"));
+	pelvis->SetupAttachment(GetMesh(), FName("pelvis"));
+	pelvis->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	spine_02 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_02"));
+	spine_02->SetupAttachment(GetMesh(), FName("spine_02"));
+	spine_02->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	spine_03 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_03"));
+	spine_03->SetupAttachment(GetMesh(), FName("spine_03"));
+	spine_03->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	upperarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_l"));
+	upperarm_l->SetupAttachment(GetMesh(), FName("upperarm_l"));
+	upperarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	upperarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_r"));
+	upperarm_r->SetupAttachment(GetMesh(), FName("upperarm_r"));
+	upperarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	lowerarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_l"));
+	lowerarm_l->SetupAttachment(GetMesh(), FName("lowerarm_l"));
+	lowerarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	lowerarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_r"));
+	lowerarm_r->SetupAttachment(GetMesh(), FName("lowerarm_r"));
+	lowerarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	hand_l = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_l"));
+	hand_l->SetupAttachment(GetMesh(), FName("hand_l"));
+	hand_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	hand_r = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_r"));
+	hand_r->SetupAttachment(GetMesh(), FName("hand_r"));
+	hand_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	blanket = CreateDefaultSubobject<UBoxComponent>(TEXT("blanket"));
+	blanket->SetupAttachment(GetMesh(), FName("backpack"));
+	blanket->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	backpack = CreateDefaultSubobject<UBoxComponent>(TEXT("backpack"));
+	backpack->SetupAttachment(GetMesh(), FName("backpack"));
+	backpack->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	thigh_l = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_l"));
+	thigh_l->SetupAttachment(GetMesh(), FName("thigh_l"));
+	thigh_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	thigh_r = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_r"));
+	thigh_r->SetupAttachment(GetMesh(), FName("thigh_r"));
+	thigh_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
+	calf_l->SetupAttachment(GetMesh(), FName("calf_l"));
+	calf_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
+	calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
+	calf_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	foot_l = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_l"));
+	foot_l->SetupAttachment(GetMesh(), FName("foot_l"));
+	foot_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	foot_r = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_r"));
+	foot_r->SetupAttachment(GetMesh(), FName("foot_r"));
+	foot_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+#pragma endregion
+
+	
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -926,6 +1014,11 @@ FVector AStrykerCharacter::GetHitTarget() const
 	 if (WeaponComponent == nullptr) return ECombatState();
 	 return WeaponComponent->CombatState;
 	
+ }
+ bool AStrykerCharacter::GetIsLocallyReloading()
+ {
+	 if (WeaponComponent == nullptr) return false;
+	 return WeaponComponent->GetLocallyReloading();
  }
 #pragma endregion Getters
 

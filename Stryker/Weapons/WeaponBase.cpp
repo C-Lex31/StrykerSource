@@ -14,7 +14,7 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 {
 	Super::GetLifetimeReplicatedProps((OutLifetimeProps));
 	DOREPLIFETIME(AWeaponBase, WeaponState);
-	DOREPLIFETIME(AWeaponBase, Ammo);
+	//DOREPLIFETIME(AWeaponBase, Ammo);
 }
 void AWeaponBase::OnRep_Owner()
 {
@@ -186,23 +186,41 @@ void AWeaponBase::SetHUDAmmo()
 		}
 	}
 }
-//Clients Only
-void AWeaponBase::OnRep_Ammo()
+
+
+void AWeaponBase::SpendRound()
+{	
+	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
+	SetHUDAmmo();
+
+	if (HasAuthority())
+	{
+		ClientUpdateAmmo(Ammo);
+	}
+	else if(OwnerCharacter && OwnerCharacter->IsLocallyControlled()) //Spend round is called on both server and client .If not checked , when server fires a weapon , sequence will be updated for weapon on clients machine.
+	{
+		++Sequence;
+	}
+}
+void AWeaponBase::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
 {
-	OwnerCharacter = OwnerCharacter == nullptr ? Cast<AStrykerCharacter>(GetOwner()) : OwnerCharacter;
+	if (HasAuthority()) return;
+	Ammo = ServerAmmo;
+	--Sequence;
+	Ammo -= Sequence;
+	SetHUDAmmo();
+}
+void AWeaponBase::ClientAddAmmo_Implementation(int32 AmmoToAdd)
+{
+	if (HasAuthority()) return;
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
+    OwnerCharacter = OwnerCharacter == nullptr ? Cast<AStrykerCharacter>(GetOwner()) : OwnerCharacter;
 	if (OwnerCharacter && OwnerCharacter->GetWeaponComponent() && GetIsFull())
 	{
 		OwnerCharacter->GetWeaponComponent()->JumpToShotgunEnd();
 	}
-}
-
-void AWeaponBase::SpendRound()
-{	
-	--Ammo;
-	FMath::Clamp(Ammo-1, 0.f, MagCapacity);
 	SetHUDAmmo();
 }
-
 
 // Called every frame
 void AWeaponBase::Tick(float DeltaTime)
@@ -229,7 +247,6 @@ void AWeaponBase::Fire(const FVector& HitTarget)
 	{
 		WeaponMesh->PlayAnimation(WeaponFireAnimation, false);
 	}
-	if(HasAuthority())
 		SpendRound();
 }
 
@@ -243,10 +260,12 @@ void AWeaponBase::DropWeapon()
 	OwnerController =nullptr ;
 }
 
+//CALED ON SERVER
 void AWeaponBase::AddAmmo(int32 AmmoToAdd)
 {
-	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
 	SetHUDAmmo();
+	ClientAddAmmo(AmmoToAdd);
 }
 FVector AWeaponBase::TraceEndWithScatter( const FVector& HitTarget)
 {

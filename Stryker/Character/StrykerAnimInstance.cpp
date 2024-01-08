@@ -37,6 +37,10 @@ void UStrykerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	bEliminated = StrykerCharacter->GetIsEliminated();
 
 	bUseFABRIK = StrykerCharacter->GetCombatState() == ECombatState::ECS_Unoccupied; 
+	if (StrykerCharacter->IsLocallyControlled() && StrykerCharacter->GetCombatState() != ECombatState::ECS_TossingGrenade)
+	{
+		bUseFABRIK = !StrykerCharacter->GetIsLocallyReloading();
+	}
 	// Offset Yaw for Strafing
 	FRotator AimRotation = StrykerCharacter->GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(StrykerCharacter->GetVelocity());

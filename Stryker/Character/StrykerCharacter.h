@@ -194,6 +194,66 @@ float MaxHealth = 100.f;
 	class AStrykerPlayerState* PS;
 	AStrykerPlayerController* LocalPC;
 
+
+public:
+	/**
+	* Hit boxes used for server-side rewind
+	*/
+
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* head;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* pelvis;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_02;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_03;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* backpack;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* blanket;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_r;
+
 public:
 	AStrykerCharacter();
 
@@ -209,6 +269,7 @@ public:
 	FORCEINLINE ETurnInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool GetIsEliminated() const { return bEliminated; }
 	FORCEINLINE bool GetCrosshairHasObstacle() const { return bCrosshairHasObstacle; }
+
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
 	FORCEINLINE float GetHealth() { return Health ; }
 	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
@@ -226,6 +287,7 @@ public:
 	FVector GetHitTarget() const;
 	FRotator GetShotStartLocAndRot();
 	ECombatState GetCombatState();
+	bool GetIsLocallyReloading();
 #pragma endregion Getters
 
     #pragma region Elimination

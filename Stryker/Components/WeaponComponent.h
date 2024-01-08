@@ -26,14 +26,18 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 
 	    class AStrykerCharacter* PlayerCharacter;
 		
-		UPROPERTY(Replicated)
+		UPROPERTY(ReplicatedUsing = OnRep_Aiming)
 		bool bIsAiming;
+
 		UPROPERTY(EditAnywhere)
 		float BaseWalkSpeed;
+
 		UPROPERTY(EditAnywhere)
 		float AimWalkSpeed;
+
 		bool bFireButtonPressed;
 
+		bool bLocallyReloading = false;
 		FVector CameraTraceEndLocation;
 		/**
 	* HUD and crosshairs
@@ -57,6 +61,8 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float ZoomInterpSpeed = 20.f;
 	void InterpFOV(float DeltaTime);
+
+	bool bAimButtonPressed = false;
 	/**
 	* Automatic fire
 	*/
@@ -101,6 +107,7 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 
 	void InitializeCarriedAmmo();
 	void UpdateAmmoValues();
+	void UpdateHUDGrenades();
 	void UpdateShotgunAmmoValues();
 	int32 AmountToReload();
 	
@@ -122,6 +129,7 @@ public:
 	FORCEINLINE void SetHitTarget(FVector Target) { HitTarget = Target; }
 	FORCEINLINE int32 GetGrenadeCount() { return Grenades; }
 	FORCEINLINE bool GetShouldSwapWeapons() {return EquippedWeapon != nullptr && SecondaryWeapon != nullptr && !bIsAiming;}
+	FORCEINLINE bool GetLocallyReloading() { return bLocallyReloading; }
 	void Fire();
 	void Reload();
 	void TossGrenade();
@@ -155,6 +163,15 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(Server, Reliable)
+	void ServerShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
 	UFUNCTION(Server , Reliable)
 	void ServerReload();
 
@@ -163,8 +180,7 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerTossGrenade(const FVector_NetQuantize& Target);
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
 
 	UFUNCTION()
 	void OnRep_EquipWeapon();
@@ -175,12 +191,17 @@ protected:
 	UFUNCTION()
 	void OnRep_CarriedAmmo();
 
+	UFUNCTION()
+	void OnRep_Aiming();
+
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
+	void ShotgunLocalFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
 	void HandleReload();
 	void TraceCameraAim(FHitResult& TraceHitResult);
 	void CrosshairLogicUpdate();
 	void SetHUDCrosshairs(float DeltaTime);
 	void UpdateCarriedAmmo();
+
 	void PlayEquipWeaponSound(AWeaponBase* WeaponToEquip);
 	void ShowAttachedGrenade(bool bShowGrenade);
 	void EquipPrimaryWeapon(AWeaponBase* WeaponToEquip);

@@ -172,14 +172,22 @@ private:
 	class AStrykerCharacter* OwnerCharacter;
 	class AStrykerPlayerController* OwnerController;
 	
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo)
+	UPROPERTY(EditAnywhere)
 	int32 Ammo;
 
-	UFUNCTION()
-	void OnRep_Ammo();
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+
+	UFUNCTION(Client, Reliable)
+	void ClientAddAmmo(int32 AmmoToAdd);
+
 
 	void SpendRound();
 
 	UPROPERTY(EditAnywhere)
 	int32 MagCapacity;
+
+	// The number of unprocessed server requests for Ammo.
+// Incremented in SpendRound for client , decremented in ClientUpdateAmmo.
+	int32 Sequence = 0;
 };
