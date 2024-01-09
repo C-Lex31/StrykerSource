@@ -33,6 +33,18 @@ struct FFramePackage
 	TMap<FName,FBoxInfo >HitBoxInfo;
 };
 
+USTRUCT(BlueprintType)
+struct FSSR_Result
+{
+
+	GENERATED_BODY()
+
+	UPROPERTY()
+	bool bHitConfirmed;
+
+	UPROPERTY()
+	bool bHeadShot;
+};
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class STRYKER_API ULagCompensationComponent : public UActorComponent
 {
@@ -50,12 +62,18 @@ protected:
 	virtual void BeginPlay() override;
 	void SaveFramePackage(FFramePackage& Package);
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
-	void ServerSideRewind(
+	FSSR_Result ServerSideRewind(
 		 AStrykerCharacter* HitCharacter,
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize& HitLocation,
 		float HitTime);
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime);
+	FSSR_Result ConfirmHit(const FFramePackage& Package,AStrykerCharacter* HitCharacter,const FVector_NetQuantize& TraceStart,const FVector_NetQuantize& HitLocation);
+
+	void CacheBoxPositions(AStrykerCharacter* HitCharacter, FFramePackage& OutFramePackage);
+	void MoveBoxes(AStrykerCharacter* HitCharacter, const FFramePackage& Package);
+	void ResetHitBoxes(AStrykerCharacter* HitCharacter, const FFramePackage& Package);
+	void EnableCharacterMeshCollision(AStrykerCharacter* HitCharacter, ECollisionEnabled::Type CollisionEnabled);
 private:
 	AStrykerCharacter* PlayerCharacter;
 

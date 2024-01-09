@@ -57,7 +57,7 @@ void ULagCompensationComponent::ShowFramePackage(const FFramePackage& Package, c
 	}
 }
 
-void ULagCompensationComponent::ServerSideRewind(AStrykerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
+FSSR_Result ULagCompensationComponent::ServerSideRewind(AStrykerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
 	bool bReturn =
 		HitCharacter == nullptr ||
@@ -65,6 +65,7 @@ void ULagCompensationComponent::ServerSideRewind(AStrykerCharacter* HitCharacter
 		HitCharacter->GetLCC()->FrameHistory.GetHead() == nullptr ||
 		HitCharacter->GetLCC()->FrameHistory.GetTail() == nullptr;
 
+	if (bReturn) FSSR_Result();
 	// Frame package that we check to verify a hit
 	FFramePackage FrameToCheck;
 	bool bShouldInterpolate = true;
@@ -76,7 +77,7 @@ void ULagCompensationComponent::ServerSideRewind(AStrykerCharacter* HitCharacter
 	if (OldestHistoryTime > HitTime)
 	{
 		// too laggy to perform SSR
-		return;
+		return FSSR_Result();
 	}
 	if (OldestHistoryTime == HitTime)
 	{
@@ -110,9 +111,10 @@ void ULagCompensationComponent::ServerSideRewind(AStrykerCharacter* HitCharacter
 	if (bShouldInterpolate)
 	{
 		// Interpolate between Younger and Older
+		FrameToCheck = InterpBetweenFrames(Older->GetValue(), Younger->GetValue(), HitTime);
 	}
-
-	if (bReturn) return;
+	return ConfirmHit(FrameToCheck, HitCharacter, TraceStart, HitLocation);
+	
 }
 
 FFramePackage ULagCompensationComponent::InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime)
@@ -141,11 +143,125 @@ FFramePackage ULagCompensationComponent::InterpBetweenFrames(const FFramePackage
 	return InterpFramePackage;
 }
 
+FSSR_Result ULagCompensationComponent::ConfirmHit(const FFramePackage& Package, AStrykerCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation)
+{
+	if (HitCharacter == nullptr) return FSSR_Result();
+
+	FFramePackage CurrentFrame;
+	CacheBoxPositions(HitCharacter, CurrentFrame);
+	MoveBoxes(HitCharacter, Package);
+	EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::NoCollision);
+
+	// A cheap and easy workaround to check for headshot by enabling collision for the head first , if hit then return early .
+	UBoxComponent* HeadBox = HitCharacter->HitCollisionBoxes[FName("head")];
+	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	HeadBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+
+	FHitResult ConfirmHitResult;
+	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;//Slightly extending trace end
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->LineTraceSingleByChannel(ConfirmHitResult,TraceStart,TraceEnd,ECollisionChannel::ECC_Visibility);
+		if (ConfirmHitResult.bBlockingHit) // we hit the head, return early
+		{
+			ResetHitBoxes(HitCharacter, CurrentFrame);
+			EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+			return FSSR_Result{ true, true };
+		}
+		else
+		{
+			//Enable collision for rest of the hit boxes on character .
+			for (auto& HitBoxPair : HitCharacter->HitCollisionBoxes)
+			{
+				if (HitBoxPair.Value != nullptr)
+				{
+					HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+					HitBoxPair.Value->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+				}
+			}
+			World->LineTraceSingleByChannel(
+				ConfirmHitResult,
+				TraceStart,
+				TraceEnd,
+				ECollisionChannel::ECC_Visibility
+			);
+			if (ConfirmHitResult.bBlockingHit)
+			{
+				ResetHitBoxes(HitCharacter, CurrentFrame);
+				EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+				return FSSR_Result{ true, false };
+			}
+		}
+	}
+
+	ResetHitBoxes(HitCharacter, CurrentFrame);
+	EnableCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+	return FSSR_Result{ false, false };
+}
+
+void ULagCompensationComponent::CacheBoxPositions(AStrykerCharacter* HitCharacter, FFramePackage& OutFramePackage)
+{
+	if (HitCharacter == nullptr)return;
+
+	for (auto& HitBox : HitCharacter->HitCollisionBoxes)
+	{
+		if (HitBox.Value != nullptr)
+		{
+			FBoxInfo BI;
+			BI.Location = HitBox.Value->GetComponentLocation();
+			BI.Rotation = HitBox.Value->GetComponentRotation();
+			BI.BoxExtent = HitBox.Value->GetScaledBoxExtent();
+			OutFramePackage.HitBoxInfo.Add(HitBox.Key, BI);
+		}
+
+	}
+}
+
+void ULagCompensationComponent::MoveBoxes(AStrykerCharacter* HitCharacter, const FFramePackage& Package)
+{
+	if (HitCharacter == nullptr) return;
+	for (auto& HitBoxPair : HitCharacter->HitCollisionBoxes)
+	{
+		if (HitBoxPair.Value != nullptr)
+		{
+			HitBoxPair.Value->SetWorldLocation(Package.HitBoxInfo[HitBoxPair.Key].Location);
+			HitBoxPair.Value->SetWorldRotation(Package.HitBoxInfo[HitBoxPair.Key].Rotation);
+			HitBoxPair.Value->SetBoxExtent(Package.HitBoxInfo[HitBoxPair.Key].BoxExtent);
+		}
+	}
+}
+
+void ULagCompensationComponent::ResetHitBoxes(AStrykerCharacter* HitCharacter, const FFramePackage& Package)
+{
+	if (HitCharacter == nullptr) return;
+	for (auto& HitBoxPair : HitCharacter->HitCollisionBoxes)
+	{
+		if (HitBoxPair.Value != nullptr)
+		{
+			HitBoxPair.Value->SetWorldLocation(Package.HitBoxInfo[HitBoxPair.Key].Location);
+			HitBoxPair.Value->SetWorldRotation(Package.HitBoxInfo[HitBoxPair.Key].Rotation);
+			HitBoxPair.Value->SetBoxExtent(Package.HitBoxInfo[HitBoxPair.Key].BoxExtent);
+			HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
+}
+
+void ULagCompensationComponent::EnableCharacterMeshCollision(AStrykerCharacter* HitCharacter, ECollisionEnabled::Type CollisionEnabled)
+{
+	if (HitCharacter && HitCharacter->GetMesh())
+	{
+		HitCharacter->GetMesh()->SetCollisionEnabled(CollisionEnabled);
+	}
+}
+
 
 // Called every frame
 void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (!PlayerCharacter || !PlayerCharacter->HasAuthority())return;// No need to save frames packages on client 
 
 	if (FrameHistory.Num() <= 1)
 	{
@@ -166,7 +282,7 @@ void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 		SaveFramePackage(ThisFrame);
 		FrameHistory.AddHead(ThisFrame);
 
-		ShowFramePackage(ThisFrame, FColor::Red);
+		//ShowFramePackage(ThisFrame, FColor::Red);
 		
 	}
 	// ...
