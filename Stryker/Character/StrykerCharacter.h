@@ -35,6 +35,10 @@ class AStrykerCharacter : public ACharacter ,public ICrosshairInteractableInterf
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* OverheadWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class ULagCompensationComponent* LCC;
+
 #pragma endregion Components
 	
 	#pragma region Inputs
@@ -196,12 +200,14 @@ float MaxHealth = 100.f;
 
 
 public:
+	UPROPERTY()
+	TMap<FName, class UBoxComponent*>HitCollisionBoxes;
 	/**
 	* Hit boxes used for server-side rewind
 	*/
 
 	UPROPERTY(EditAnywhere)
-	class UBoxComponent* head;
+    UBoxComponent* head;
 
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* pelvis;
@@ -254,6 +260,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* foot_r;
 
+
 public:
 	AStrykerCharacter();
 
@@ -263,6 +270,7 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE UWeaponComponent* GetWeaponComponent() const { return WeaponComponent; }
+	FORCEINLINE ULagCompensationComponent* GetLCC() const { return LCC; }
 	FORCEINLINE UBuffComponent* GetBuffComponent() const { return BuffComponent; }
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
