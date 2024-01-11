@@ -54,7 +54,8 @@ public:
 	FORCEINLINE FName GetRightHandSocket() { return RightHandSocket; }
 	FORCEINLINE FName GetLeftHandSocket() { return LeftHandSocket; }
 	FORCEINLINE FName GetHolsterSocket() { return HolsterSocket; }
-
+	FORCEINLINE float GetWeaponDamage() { return Damage; }
+	FORCEINLINE float GetHeadShotDamage() { return HeadShotDamage; }
 	/**
 	* Textures for the weapon crosshairs
 	*/
@@ -105,8 +106,10 @@ protected:
 	virtual void OnDropped();
 	virtual void OnEquippedSecondary();
 
-	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
-	USkeletalMeshComponent* WeaponMesh;
+
+
+	class AStrykerCharacter* OwnerCharacter;
+	class AStrykerPlayerController* OwnerController;
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(
@@ -139,7 +142,17 @@ protected:
 	UPROPERTY(EditAnywhere)
 	bool bDrawDebugScatterTrace = false;
 
+	UPROPERTY(VisibleAnywhere, Category = "WeaponProperties")
+	USkeletalMeshComponent* WeaponMesh;
 
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
+	float Damage = 20.f;
+
+	UPROPERTY(EditAnywhere ,Category = "WeaponProperties")
+	float HeadShotDamage = 40.f;
+
+	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
+	bool bUseSSR = false;
 
 private:
 
@@ -169,8 +182,7 @@ private:
 	FName HolsterSocket = FName("HolsterSocket");
 
 
-	class AStrykerCharacter* OwnerCharacter;
-	class AStrykerPlayerController* OwnerController;
+
 	
 	UPROPERTY(EditAnywhere)
 	int32 Ammo;

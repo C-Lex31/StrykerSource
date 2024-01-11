@@ -110,4 +110,5 @@ public:
 	float MatchTime = 0.f;//temp
 	float WarmupTime = 0.f;
 	uint32 CountdownInt = 0;
+	float SingleTripTime = 0.f;
 };

@@ -35,14 +35,25 @@ class STRYKER_API AHitScanWeapon : public AWeaponBase
 protected:
 	void WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit);
 
-	UPROPERTY(EditAnywhere)
-	float Damage = 20.f;
+
 
 	UPROPERTY(EditAnywhere)
-	class UParticleSystem* ImpactParticles;
+	class UParticleSystem* BodyImpactParticles;
 
 	UPROPERTY(EditAnywhere)
-	USoundCue* HitSound;
+	USoundCue* BodyHitSound;
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* OtherImpactParticles;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* OtherHitSound;
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* DefaultImpactParticles;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* DefaultHitSound;
 public:
 	virtual void Fire(const FVector& HitTarget) override;
 	

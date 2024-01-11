@@ -31,6 +31,9 @@ struct FFramePackage
 
 	UPROPERTY()
 	TMap<FName,FBoxInfo >HitBoxInfo;
+
+	UPROPERTY()
+	AStrykerCharacter* Character; //For shotgun weapon type
 };
 
 USTRUCT(BlueprintType)
@@ -45,6 +48,19 @@ struct FSSR_Result
 	UPROPERTY()
 	bool bHeadShot;
 };
+
+USTRUCT(BlueprintType)
+struct FShotgunServerSideRewindResult
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TMap<AStrykerCharacter*, uint32> HeadShots;
+
+	UPROPERTY()
+	TMap<AStrykerCharacter*, uint32> BodyShots;
+
+};
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class STRYKER_API ULagCompensationComponent : public UActorComponent
 {
@@ -56,6 +72,22 @@ public:
 	ULagCompensationComponent();
 
 	friend class AStrykerCharacter;
+	UFUNCTION(Server, Reliable)
+	void ServerScoreRequest(
+		AStrykerCharacter* HitCharacter,
+		const FVector_NetQuantize& TraceStart,
+		const FVector_NetQuantize& HitLocation,
+		float HitTime,
+		class AWeaponBase* DamageCauser
+	);
+	UFUNCTION(Server, Reliable)
+	void ServerShotgunScoreRequest(
+		const TArray<AStrykerCharacter*>& HitCharacters,
+		const FVector_NetQuantize& TraceStart,
+		const TArray<FVector_NetQuantize>& HitLocations,
+		float HitTime
+	);
+
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 protected:
 	// Called when the game starts
@@ -67,8 +99,24 @@ protected:
 		const FVector_NetQuantize& TraceStart,
 		const FVector_NetQuantize& HitLocation,
 		float HitTime);
+	FFramePackage GetFrameToCheck(AStrykerCharacter* HitCharacter ,float HitTime);
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime);
 	FSSR_Result ConfirmHit(const FFramePackage& Package,AStrykerCharacter* HitCharacter,const FVector_NetQuantize& TraceStart,const FVector_NetQuantize& HitLocation);
+
+	/**
+    * Shotgun Exclusive
+    */
+	FShotgunServerSideRewindResult ShotgunServerSideRewind(
+		const TArray<AStrykerCharacter*>& HitCharacters,
+		const FVector_NetQuantize& TraceStart,
+		const TArray<FVector_NetQuantize>& HitLocations,
+		float HitTime);
+
+	FShotgunServerSideRewindResult ShotgunConfirmHit(
+		const TArray<FFramePackage>& FramePackages,
+		const FVector_NetQuantize& TraceStart,
+		const TArray<FVector_NetQuantize>& HitLocations
+	);
 
 	void CacheBoxPositions(AStrykerCharacter* HitCharacter, FFramePackage& OutFramePackage);
 	void MoveBoxes(AStrykerCharacter* HitCharacter, const FFramePackage& Package);

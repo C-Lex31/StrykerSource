@@ -59,7 +59,8 @@ void AStrykerPlayerController::SetHUDTime()
 void AStrykerPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest, float TimeServerReceivedClientRequest)
 {
 	float RTT = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
-	float CurrentServerTime = TimeServerReceivedClientRequest + 0.5f * RTT;
+	SingleTripTime = 0.5f * RTT;
+	float CurrentServerTime = TimeServerReceivedClientRequest + SingleTripTime;
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
 }
 
@@ -109,8 +110,6 @@ void AStrykerPlayerController::SetShield_Implementation(float Shield, float MaxS
 void AStrykerPlayerController::InitializeGameHUD_Implementation()
 {
 	PlayerOverlay = CreateWidget<UCharacterOverlay>(UGameplayStatics::GetPlayerController(GetWorld(), 0), PlayerOverlayClass);
-	//if(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
-	 //Cast<IPlayerControllerInterface>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))->I_ClientHUD();
 	if(PlayerOverlay)
 		PlayerOverlay->AddToViewport();
 }

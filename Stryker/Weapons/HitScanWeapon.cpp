@@ -3,8 +3,11 @@
 
 #include "HitScanWeapon.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Kismet/GameplayStatics.h"
 #include "Stryker/Character/StrykerCharacter.h"
+#include "Stryker/PlayerController/StrykerPlayerController.h"
+#include "Stryker/Components/LagCompensationComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 #include "Stryker/Stryker.h"
@@ -13,6 +16,8 @@
 void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit)
 {
 	UWorld* World = GetWorld();
+	FCollisionQueryParams CQP;
+	CQP.bReturnPhysicalMaterial = true;
 	if (World)
 	{
 		FVector End =  TraceStart + (HitTarget - TraceStart) * 1.25f;
@@ -21,7 +26,8 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 			OutHit,
 			TraceStart,
 			End,
-			ECollisionChannel::ECC_Visibility
+			ECollisionChannel::ECC_Visibility,
+			CQP
 		);
 		//UKismetSystemLibrary::LineTraceSingle(World, TraceStart, End, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIgnore, EDrawDebugTrace::ForDuration, FireHit, true, FColor::Blue, FColor::Green, 1.f);
 		FVector BeamEnd = End;
@@ -30,7 +36,7 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 			BeamEnd = OutHit.ImpactPoint;
 		}
 
-		DrawDebugSphere(GetWorld(), BeamEnd, 16.f, 12, FColor::Orange, true);
+		//DrawDebugSphere(GetWorld(), BeamEnd, 16.f, 12, FColor::Orange, true);
 
 		if (BeamParticles)
 		{
@@ -80,37 +86,114 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			);*/
 			//UKismetSystemLibrary::LineTraceSingle(World, Start, End, UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIgnore, EDrawDebugTrace::ForDuration, FireHit, true, FColor::Blue, FColor::Green, 1.f);
 			WeaponTraceHit(Start, HitTarget, FireHit);
-			
+			//int surfaceInt = UKismetMathLibrary::Conv_ByteToInt(FireHit.PhysMaterial->SurfaceType);
+
 				AStrykerCharacter* StrykerCharacter = Cast<AStrykerCharacter>(FireHit.GetActor());
-				if (StrykerCharacter && HasAuthority() && InstigatorController )
+				if (StrykerCharacter  && InstigatorController )
 				{
+					bool bCauseAuthoritativeDamage = !bUseSSR || OwnerPawn->IsLocallyControlled();
+					if (HasAuthority() && bCauseAuthoritativeDamage)
+					{
+						const float DamageToCause = FireHit.BoneName.ToString() == FString("head") ? HeadShotDamage : Damage;
 						UGameplayStatics::ApplyDamage(
 							StrykerCharacter,
-							Damage,
+							DamageToCause,
 							InstigatorController,
 							this,
 							UDamageType::StaticClass()
 						);
-				}
-				if (ImpactParticles)
-				{
+					}
+					if (!HasAuthority() && bUseSSR)
+					{
+						OwnerCharacter = OwnerCharacter == nullptr ? Cast<AStrykerCharacter>(OwnerPawn) : OwnerCharacter;
+						OwnerController = OwnerController == nullptr ? Cast<AStrykerPlayerController>(InstigatorController) : OwnerController;
+						if (OwnerController && OwnerCharacter && OwnerCharacter->GetLCC()&& OwnerCharacter->IsLocallyControlled())
+						{
+							OwnerCharacter->GetLCC()->ServerScoreRequest(
+								StrykerCharacter,
+								Start,
+								HitTarget,
+								OwnerController->GetServerTime() - OwnerController->SingleTripTime,
+								this
+							);
+						}
+					
+					}
 
-					UGameplayStatics::SpawnEmitterAtLocation(
-						GetWorld(),
-						ImpactParticles,
-						FireHit.ImpactPoint,
-						FireHit.ImpactNormal.Rotation()
-					);
 				}
-				if (HitSound)
+
+				if (FireHit.PhysMaterial != nullptr)
 				{
-					UGameplayStatics::PlaySoundAtLocation(
-						this,
-						HitSound,
-						FireHit.ImpactPoint
-					);
+					switch (FireHit.PhysMaterial->SurfaceType)
+					{
+					case EPhysicalSurface::SurfaceType1:
+						if (BodyImpactParticles)
+						{
+
+							UGameplayStatics::SpawnEmitterAtLocation(
+								GetWorld(),
+								BodyImpactParticles,
+								FireHit.ImpactPoint,
+								FireHit.ImpactNormal.Rotation()
+							);
+						}
+						if (BodyHitSound)
+						{
+							UGameplayStatics::PlaySoundAtLocation(
+								this,
+								BodyHitSound,
+								FireHit.ImpactPoint
+							);
+						}
+
+						break;
+
+					case EPhysicalSurface::SurfaceType2:
+
+						if (OtherImpactParticles)
+						{
+
+							UGameplayStatics::SpawnEmitterAtLocation(
+								GetWorld(),
+								OtherImpactParticles,
+								FireHit.ImpactPoint,
+								FireHit.ImpactNormal.Rotation()
+							);
+						}
+						if (OtherHitSound)
+						{
+							UGameplayStatics::PlaySoundAtLocation(
+								this,
+								OtherHitSound,
+								FireHit.ImpactPoint
+							);
+						}
+						break;
+
+					default:
+						if (DefaultImpactParticles)
+						{
+
+							UGameplayStatics::SpawnEmitterAtLocation(
+								GetWorld(),
+								DefaultImpactParticles,
+								FireHit.ImpactPoint,
+								FireHit.ImpactNormal.Rotation()
+							);
+						}
+						if (DefaultHitSound)
+						{
+							UGameplayStatics::PlaySoundAtLocation(
+								this,
+								DefaultHitSound,
+								FireHit.ImpactPoint
+							);
+						}
+						break;
+					}
 				}
-			
+				
+
 			
 			if (MuzzleFlashParticle)
 			{

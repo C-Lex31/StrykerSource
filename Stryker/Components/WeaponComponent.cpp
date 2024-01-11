@@ -347,7 +347,6 @@ void UWeaponComponent::FireHitScanWeapon()
 
 void UWeaponComponent::FireShotgun()
 {
-	if (!EquippedWeapon)return;
 
 	AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
 	if (Shotgun)
@@ -492,8 +491,9 @@ void UWeaponComponent::FireTimerFinished()
 bool UWeaponComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
-	if (bLocallyReloading) return false;
 	if (!EquippedWeapon->GetIsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
+	if (bLocallyReloading) return false;
+
 	return !EquippedWeapon->GetIsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;
 }
 
@@ -584,6 +584,7 @@ void UWeaponComponent::ShotgunLocalFire(const TArray<FVector_NetQuantize>& Trace
 	if (!Shotgun || !PlayerCharacter) return;
 	if (CombatState == ECombatState::ECS_Reloading || CombatState == ECombatState::ECS_Unoccupied)
 	{
+		bLocallyReloading = false;
 		PlayerCharacter->PlayFireMontage(bIsAiming);
 		Shotgun->FireShotgun(TraceHitTargets);
 		CombatState = ECombatState::ECS_Unoccupied;
