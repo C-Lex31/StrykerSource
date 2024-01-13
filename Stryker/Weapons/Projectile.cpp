@@ -36,17 +36,7 @@ void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	APawn* InstigatorPawn = GetInstigator();
-	FTimerHandle TH_ToggleCollison;
-#if 0
-	if (!InstigatorPawn)
-		CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
-	else
-	{
-		CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Ignore);
-		GetWorldTimerManager().SetTimer(
-			TH_ToggleCollison, this, &ThisClass::ToggleCollision, 0.01f, false);
-	}
-#endif // 0
+
 
 	if (HasAuthority())
 	{

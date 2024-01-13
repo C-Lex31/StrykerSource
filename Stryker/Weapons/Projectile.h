@@ -24,6 +24,19 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void Destroyed() override;
 
+	FORCEINLINE float GetProjectileDamage() { return Damage; }
+	FORCEINLINE void SetProjectileDamage(float DmgToSet) {  Damage =DmgToSet; }
+	/**
+* Used with server-side rewind
+*/
+
+	bool bUseServerSideRewind = false;
+	FVector_NetQuantize TraceStart;
+	FVector_NetQuantize100 InitialVelocity;
+
+	UPROPERTY(EditAnywhere)
+	float InitialSpeed = 15000;
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -35,7 +48,7 @@ protected:
 	virtual void OnProjectileHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	UPROPERTY(EditAnywhere)
-	float Damage = 20, f;
+	float Damage = 20.f;
 
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* CollisionBox;

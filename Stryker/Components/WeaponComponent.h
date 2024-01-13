@@ -144,11 +144,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void BP_TossGrenade();
 
+	
+
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AProjectile> GrenadeClass;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> SSR_GrenadeClass;
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 protected:
@@ -181,6 +186,8 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerTossGrenade(const FVector_NetQuantize& Target);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastToss(const FVector_NetQuantize& Target);
 
 	UFUNCTION()
 	void OnRep_EquipWeapon();
@@ -196,6 +203,7 @@ protected:
 
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 	void ShotgunLocalFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+	void LocalToss(const FVector_NetQuantize& Target);
 	void HandleReload();
 	void TraceCameraAim(FHitResult& TraceHitResult);
 	void CrosshairLogicUpdate();

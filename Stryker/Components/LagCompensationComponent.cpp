@@ -7,6 +7,7 @@
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "Stryker/Stryker.h"
 // Sets default values for this component's properties
 ULagCompensationComponent::ULagCompensationComponent()
 {
@@ -176,14 +177,14 @@ FSSR_Result ULagCompensationComponent::ConfirmHit(const FFramePackage& Package, 
 	// A cheap and easy workaround to check for headshot by enabling collision for the head first , if hit then return early .
 	UBoxComponent* HeadBox = HitCharacter->HitCollisionBoxes[FName("head")];
 	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	HeadBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	HeadBox->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
 
 	FHitResult ConfirmHitResult;
 	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;//Slightly extending trace end
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		World->LineTraceSingleByChannel(ConfirmHitResult,TraceStart,TraceEnd,ECollisionChannel::ECC_Visibility);
+		World->LineTraceSingleByChannel(ConfirmHitResult,TraceStart,TraceEnd, ECC_HitBox);
 		if (ConfirmHitResult.bBlockingHit) // we hit the head, return early
 		{
 			ResetHitBoxes(HitCharacter, CurrentFrame);
@@ -198,14 +199,14 @@ FSSR_Result ULagCompensationComponent::ConfirmHit(const FFramePackage& Package, 
 				if (HitBoxPair.Value != nullptr)
 				{
 					HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-					HitBoxPair.Value->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+					HitBoxPair.Value->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
 				}
 			}
 			World->LineTraceSingleByChannel(
 				ConfirmHitResult,
 				TraceStart,
 				TraceEnd,
-				ECollisionChannel::ECC_Visibility
+				ECC_HitBox
 			);
 			if (ConfirmHitResult.bBlockingHit)
 			{
@@ -244,7 +245,7 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 		// Enable collision for the head first
 		UBoxComponent* HeadBox = Frame.Character->HitCollisionBoxes[FName("head")];
 		HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		HeadBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+		HeadBox->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
 	}
 
 	UWorld* World = GetWorld();
@@ -259,7 +260,7 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 				ConfirmHitResult,
 				TraceStart,
 				TraceEnd,
-				ECollisionChannel::ECC_Visibility
+				ECC_HitBox
 			);
 			AStrykerCharacter* StrykerCharacter = Cast<AStrykerCharacter>(ConfirmHitResult.GetActor());
 			if (StrykerCharacter)
@@ -284,7 +285,7 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 			if (HitBoxPair.Value != nullptr)
 			{
 				HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-				HitBoxPair.Value->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+				HitBoxPair.Value->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
 			}
 		}
 		UBoxComponent* HeadBox = Frame.Character->HitCollisionBoxes[FName("head")];
@@ -302,7 +303,7 @@ FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(cons
 				ConfirmHitResult,
 				TraceStart,
 				TraceEnd,
-				ECollisionChannel::ECC_Visibility
+				ECC_HitBox
 			);
 			AStrykerCharacter* StrykerCharacter = Cast<AStrykerCharacter>(ConfirmHitResult.GetActor());
 			if (StrykerCharacter)

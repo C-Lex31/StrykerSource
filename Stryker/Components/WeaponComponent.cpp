@@ -237,6 +237,8 @@ void UWeaponComponent::EquipSecondaryWeapon(AWeaponBase* WeaponToEquip)
 	SecondaryWeapon->SetOwner(PlayerCharacter);
 }
 
+
+
 void UWeaponComponent::OnRep_EquipWeapon()
 {
 	if (EquippedWeapon)
@@ -431,18 +433,41 @@ void UWeaponComponent::FinishTossGrenade()
 	AttachActorToRightHand(EquippedWeapon);
 }
 
+//Called LOCALLY from anim notify in blueprints
 void UWeaponComponent::BP_TossGrenade()
 {
 	ShowAttachedGrenade(false);
-	if (PlayerCharacter && PlayerCharacter->IsLocallyControlled())
-	{
-		ServerTossGrenade(HitTarget);
-	}
-}
+	//if (PlayerCharacter && PlayerCharacter->IsLocallyControlled())
+	//{
+		//ServerTossGrenade(HitTarget);
+	//}
+	//if (PlayerCharacter->HasAuthority())
+		//ServerTossGrenade(HitTarget);
 
+	if (!PlayerCharacter->HasAuthority() && PlayerCharacter->IsLocallyControlled()) 
+		LocalToss(HitTarget);
+	ServerTossGrenade(HitTarget);
+
+	//Toss();
+	/*if (EquippedWeapon && PlayerCharacter)
+	{
+		if (!PlayerCharacter->HasAuthority()&&PlayerCharacter->IsLocallyControlled()) Toss();
+		ServerTossGrenade(HitTarget);
+	}*/
+
+}
 void UWeaponComponent::ServerTossGrenade_Implementation(const FVector_NetQuantize& Target)
 {
-	
+	MulticastToss(Target);
+}
+
+void UWeaponComponent::MulticastToss_Implementation(const FVector_NetQuantize& Target)
+{
+	if (PlayerCharacter && PlayerCharacter->IsLocallyControlled() && !PlayerCharacter->HasAuthority()) return;
+	LocalToss(Target);
+}
+void UWeaponComponent::LocalToss(const FVector_NetQuantize& Target)
+{
 	if (PlayerCharacter && GrenadeClass && PlayerCharacter->GetAttachedGrenade())
 	{
 		const FVector StartingLocation = PlayerCharacter->GetAttachedGrenade()->GetComponentLocation();
@@ -454,14 +479,66 @@ void UWeaponComponent::ServerTossGrenade_Implementation(const FVector_NetQuantiz
 		if (World)
 		{
 			World->SpawnActor<AProjectile>(
-				GrenadeClass,
+				SSR_GrenadeClass,
 				StartingLocation,
 				ToTarget.Rotation(),
 				SpawnParams
 			);
 		}
+
+		/*if (!PlayerCharacter)return;
+		//if (EquippedWeapon == nullptr) return;
+		//APawn* InstigatorPawn = Cast<APawn>(GetOwner());
+		UWorld* World = GetWorld();
+		AProjectile* SpawnedProjectile = nullptr;
+		const FVector StartingLocation = PlayerCharacter->GetAttachedGrenade()->GetComponentLocation();
+		FVector ToTarget = HitTarget - StartingLocation;
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = PlayerCharacter;
+		SpawnParams.Instigator = PlayerCharacter;
+		if (PlayerCharacter->HasAuthority()) // On server 
+		{
+			if (PlayerCharacter->IsLocallyControlled())
+			{
+				SpawnedProjectile = World->SpawnActor<AProjectile>(GrenadeClass, StartingLocation, ToTarget.Rotation(), SpawnParams);
+				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Black, "Server- LC");
+				SpawnedProjectile->bUseServerSideRewind = false;
+				//SpawnedProjectile->SetProjectileDamage(Damage); //set projectile damage equal to projectile weapon damage
+			}
+			else // server, not locally controlled - spawn non-replicated projectile, no SSR
+			{
+				SpawnedProjectile = World->SpawnActor<AProjectile>(SSR_GrenadeClass, StartingLocation, ToTarget.Rotation(), SpawnParams);
+				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, "Server-Not LC");
+				SpawnedProjectile->bUseServerSideRewind = false;
+			}
+		}
+
+		else
+		{
+			if (PlayerCharacter->IsLocallyControlled()) // client, locally controlled - spawn non-replicated projectile, use SSR
+			{
+				SpawnedProjectile = World->SpawnActor<AProjectile>(SSR_GrenadeClass, StartingLocation, ToTarget.Rotation(), SpawnParams);
+				if (SpawnedProjectile)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, "Client- LC");
+					SpawnedProjectile->bUseServerSideRewind = true;
+					//	SpawnedProjectile->TraceStart = SocketTransform.GetLocation();
+					SpawnedProjectile->InitialVelocity = SpawnedProjectile->GetActorForwardVector() * SpawnedProjectile->InitialSpeed;
+					//SpawnedProjectile->SetProjectileDamage(Damage);
+				}
+
+			}
+			else // client, not locally controlled - spawn non-replicated projectile, no SSR
+			{
+				SpawnedProjectile = World->SpawnActor<AProjectile>(SSR_GrenadeClass, StartingLocation, ToTarget.Rotation(), SpawnParams);
+				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Emerald, "CLIENT-Not LC");
+				//	SpawnedProjectile->bUseServerSideRewind = false;
+			}
+		}*/
+
 	}
 }
+
 
 void UWeaponComponent::StartFireTimer()
 {

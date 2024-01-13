@@ -17,6 +17,9 @@ class STRYKER_API AProjectileWeapon : public AWeaponBase
 	UPROPERTY(EditAnywhere )
 	TSubclassOf<class AProjectile>ProjectileClass;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile>SSR_ProjectileClass;
+
 public:
 	virtual void Fire(const FVector& HitTarget) override;
 };
