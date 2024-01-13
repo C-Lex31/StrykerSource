@@ -21,6 +21,18 @@ void AStrykerPlayerController::BeginPlay()
 	ServerCheckMatchState();
 }
 
+void AStrykerPlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
+	if (IsLocalController())
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+	}
+
+	GetWorldTimerManager().SetTimer(TH_SyncTimeWithServer, this, &ThisClass::CheckTimeSync, TimeSyncFrequency, true, -1.f);
+	GetWorldTimerManager().SetTimer(TH_CheckPing, this, &ThisClass::CheckPing, CheckPingFrequency, true, -1.f);
+}
+
 void AStrykerPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -260,17 +272,7 @@ float AStrykerPlayerController::GetServerTime()
 	else return GetWorld()->GetTimeSeconds() + ClientServerDelta;
 }
 
-void AStrykerPlayerController::ReceivedPlayer()
-{
-	Super::ReceivedPlayer();
-	if (IsLocalController())
-	{
-		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
-	}
 
-	GetWorldTimerManager().SetTimer(TH_SyncTimeWithServer, this, &ThisClass::CheckTimeSync , TimeSyncFrequency, true, -1.f);
-	GetWorldTimerManager().SetTimer(TH_CheckPing, this, &ThisClass::CheckPing, CheckPingFrequency, true, -1.f);
-}
 
 void AStrykerPlayerController::CheckTimeSync()
 {

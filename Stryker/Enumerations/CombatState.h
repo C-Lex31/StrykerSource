@@ -5,5 +5,6 @@ enum class ECombatState :uint8
 {
 	ECS_Unoccupied UMETA(DisplayName="Unoccupied"),
 	ECS_Reloading UMETA(DisplayName="Reloading"),
-	ECS_TossingGrenade UMETA(DisplayName = "TossingGrenade")
+	ECS_TossingGrenade UMETA(DisplayName = "TossingGrenade"),
+	ECS_EquipWeapon UMETA(DisplayName = "EquipWeapon")
 };

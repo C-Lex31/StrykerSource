@@ -151,7 +151,7 @@ protected:
 	UPROPERTY(EditAnywhere ,Category = "WeaponProperties")
 	float HeadShotDamage = 40.f;
 
-	UPROPERTY(EditAnywhere, Category = "WeaponProperties")
+	UPROPERTY(EditAnywhere,Replicated, Category = "WeaponProperties")
 	bool bUseSSR = false;
 
 private:

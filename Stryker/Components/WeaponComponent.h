@@ -144,7 +144,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void BP_TossGrenade();
 
-	
+	UFUNCTION(BlueprintCallable)
+	void BP_FinishEquip();
+
+	UFUNCTION(BlueprintCallable)
+	void BP_EquipAttachWeapon();
+
+
 
 	UFUNCTION(BlueprintCallable)
 	void ShotgunShellReload();
@@ -188,6 +194,12 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastToss(const FVector_NetQuantize& Target);
+
+	UFUNCTION(Server, Reliable)
+	void ServerEquipAttachWeapon();
+
+	UFUNCTION(Server, Reliable)
+	void ServerFinishSwappingWeapon();
 
 	UFUNCTION()
 	void OnRep_EquipWeapon();

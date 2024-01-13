@@ -37,7 +37,10 @@ void UStrykerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	bEliminated = StrykerCharacter->GetIsEliminated();
 
 	bUseFABRIK = StrykerCharacter->GetCombatState() == ECombatState::ECS_Unoccupied; 
-	if (StrykerCharacter->IsLocallyControlled() && StrykerCharacter->GetCombatState() != ECombatState::ECS_TossingGrenade)
+	bool bFABRIKOverride = StrykerCharacter->IsLocallyControlled() &&
+		StrykerCharacter->GetCombatState() != ECombatState::ECS_TossingGrenade &&
+		StrykerCharacter->GetFinishedSwapping();
+	if (bFABRIKOverride)
 	{
 		bUseFABRIK = !StrykerCharacter->GetIsLocallyReloading();
 	}

@@ -90,6 +90,8 @@ class AStrykerCharacter : public ACharacter ,public ICrosshairInteractableInterf
 	UAnimMontage* ReloadMontage;
 	UPROPERTY(EditAnywhere, Category = " AnimMontages")
 	UAnimMontage* TossGrenadeMontage;
+	UPROPERTY(EditAnywhere, Category = " AnimMontages")
+	UAnimMontage* WeaponEquipMontage;
 #pragma endregion Animation
 
 	UPROPERTY(ReplicatedUsing=OnRep_OverlappedWeapon)
@@ -102,6 +104,8 @@ class AStrykerCharacter : public ACharacter ,public ICrosshairInteractableInterf
 
 	UPROPERTY(EditAnywhere)
 	float CameraThreshold = 100.f;
+
+	bool bFinishedSwapping = false;
 
 	UPROPERTY(EditAnywhere,  Category = Debug)
 	float CrossObstacleTraceLength=200.f;
@@ -277,7 +281,8 @@ public:
 	FORCEINLINE ETurnInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool GetIsEliminated() const { return bEliminated; }
 	FORCEINLINE bool GetCrosshairHasObstacle() const { return bCrosshairHasObstacle; }
-
+	FORCEINLINE bool GetFinishedSwapping()const { return bFinishedSwapping; }
+	FORCEINLINE void SetFinishedSwapping(bool value ) {  bFinishedSwapping =value; }
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
 	FORCEINLINE float GetHealth() { return Health ; }
 	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
@@ -335,6 +340,7 @@ public:
 	void PlayFireMontage(bool bAiming);
 	void PlayReloadMontage();
 	void PlayTossGrenadeMontage();
+	void PlayEquipWeaponMontage();
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget (bool bShowScope);

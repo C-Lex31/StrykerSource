@@ -14,6 +14,7 @@ void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 {
 	Super::GetLifetimeReplicatedProps((OutLifetimeProps));
 	DOREPLIFETIME(AWeaponBase, WeaponState);
+	DOREPLIFETIME_CONDITION(AWeaponBase, bUseSSR,COND_OwnerOnly);
 	//DOREPLIFETIME(AWeaponBase, Ammo);
 }
 void AWeaponBase::OnRep_Owner()

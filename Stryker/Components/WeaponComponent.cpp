@@ -83,6 +83,7 @@ void UWeaponComponent::OnRep_Aiming()
 		bIsAiming = bAimButtonPressed;
 	}
 }
+
 void UWeaponComponent::ShotgunShellReload()
 {
 	if(PlayerCharacter && PlayerCharacter->HasAuthority())
@@ -190,23 +191,16 @@ void UWeaponComponent::EquipWeapon(AWeaponBase* WeaponToEquip)
 	PlayerCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
 	PlayerCharacter->bUseControllerRotationYaw = true;
 }
+//called on server only
 void UWeaponComponent::SwapWeapons()
 {
-	if (CombatState != ECombatState::ECS_Unoccupied)return;
-	AWeaponBase* temp = EquippedWeapon;
-	EquippedWeapon = SecondaryWeapon;
-	SecondaryWeapon = temp;
+	if (CombatState != ECombatState::ECS_Unoccupied || PlayerCharacter == nullptr || !PlayerCharacter->HasAuthority())return;
 
-	EquippedWeapon->SetWeaponState(EWeaponState::EWS_EquippedPrimary);
-	AttachActorToRightHand(EquippedWeapon);
-	EquippedWeapon->SetOwner(PlayerCharacter);
-	EquippedWeapon->SetHUDAmmo();
-	UpdateCarriedAmmo();
-	if (EquippedWeapon->GetIsEmpty())
-		Reload();
+	PlayerCharacter->PlayEquipWeaponMontage();
+	CombatState = ECombatState::ECS_EquipWeapon;
+	PlayerCharacter->SetFinishedSwapping(false);
 
-	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
-	AttachActorToBackpack(SecondaryWeapon);
+
 }
 void UWeaponComponent::EquipPrimaryWeapon(AWeaponBase* WeaponToEquip)
 {
@@ -236,6 +230,8 @@ void UWeaponComponent::EquipSecondaryWeapon(AWeaponBase* WeaponToEquip)
 	PlayEquipWeaponSound(WeaponToEquip);
 	SecondaryWeapon->SetOwner(PlayerCharacter);
 }
+
+
 
 
 
@@ -374,7 +370,7 @@ void UWeaponComponent::TossGrenade()
 {
 	if (Grenades == 0.f)return;
 	if (CombatState != ECombatState::ECS_Unoccupied || EquippedWeapon == nullptr) return;
-	CombatState = ECombatState::ECS_TossingGrenade;
+	//CombatState = ECombatState::ECS_TossingGrenade;
 
 	if (PlayerCharacter)
 	{
@@ -383,6 +379,7 @@ void UWeaponComponent::TossGrenade()
 
 	if (PlayerCharacter)//&& !PlayerCharacter->HasAuthority())
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Black, "Server- LC");
 		ServerTossGrenadeCosmetic();
 	}
 	/*
@@ -397,7 +394,28 @@ void UWeaponComponent::TossGrenade()
 	}
 	*/
 }
+void UWeaponComponent::TossGrenadeCosmetic()
+{
+	if (PlayerCharacter )
+	{
+		PlayerCharacter->PlayTossGrenadeMontage();
+		AttachActorToLeftHand(EquippedWeapon);
+		ShowAttachedGrenade(true);
+	}
+}
+void UWeaponComponent::ServerTossGrenadeCosmetic_Implementation()
+{
+	if (Grenades == 0.f)return;
+	CombatState = ECombatState::ECS_TossingGrenade;
+	//Could definitely use a multicast RPC here instead of Rep Notify
+	
+	Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
+	
+	UpdateHUDGrenades();
+	if(PlayerCharacter && !PlayerCharacter->IsLocallyControlled())
+	 TossGrenadeCosmetic();
 
+}
 void UWeaponComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
 {
 	if (CarriedAmmoMap.Contains(WeaponType))
@@ -456,6 +474,36 @@ void UWeaponComponent::BP_TossGrenade()
 	}*/
 
 }
+void UWeaponComponent::BP_FinishEquip()
+{
+	//if (PlayerCharacter && PlayerCharacter->HasAuthority())
+		//CombatState = ECombatState::ECS_Unoccupied;
+	if (PlayerCharacter)
+		PlayerCharacter->SetFinishedSwapping(true);
+	//if(PlayerCharacter && PlayerCharacter->HasAuthority())
+	ServerFinishSwappingWeapon();
+}
+void UWeaponComponent::BP_EquipAttachWeapon()
+{
+	ServerEquipAttachWeapon();
+}
+void UWeaponComponent::ServerEquipAttachWeapon_Implementation()
+{
+	AWeaponBase* temp = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = temp;
+
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_EquippedPrimary);
+	AttachActorToRightHand(EquippedWeapon);
+	EquippedWeapon->SetOwner(PlayerCharacter);
+	EquippedWeapon->SetHUDAmmo();
+	UpdateCarriedAmmo();
+	if (EquippedWeapon->GetIsEmpty())
+		Reload();
+
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToBackpack(SecondaryWeapon);
+}
 void UWeaponComponent::ServerTossGrenade_Implementation(const FVector_NetQuantize& Target)
 {
 	MulticastToss(Target);
@@ -468,8 +516,9 @@ void UWeaponComponent::MulticastToss_Implementation(const FVector_NetQuantize& T
 }
 void UWeaponComponent::LocalToss(const FVector_NetQuantize& Target)
 {
-	if (PlayerCharacter && GrenadeClass && PlayerCharacter->GetAttachedGrenade())
+	if (PlayerCharacter && SSR_GrenadeClass && PlayerCharacter->GetAttachedGrenade())
 	{
+		
 		const FVector StartingLocation = PlayerCharacter->GetAttachedGrenade()->GetComponentLocation();
 		FVector ToTarget = Target - StartingLocation;
 		FActorSpawnParameters SpawnParams;
@@ -587,7 +636,13 @@ void UWeaponComponent::OnRep_CombatState()
 			Fire();
 		break;
 	case ECombatState::ECS_TossingGrenade:
-		TossGrenadeCosmetic();
+		if (PlayerCharacter && !PlayerCharacter->IsLocallyControlled())
+			TossGrenadeCosmetic();
+		break;
+
+	case ECombatState::ECS_EquipWeapon:
+		if (PlayerCharacter && !PlayerCharacter->IsLocallyControlled())
+			PlayerCharacter->PlayEquipWeaponMontage();
 		break;
 	
 	}
@@ -679,32 +734,19 @@ void UWeaponComponent::ServerReload_Implementation()
 	
 }
 
-void UWeaponComponent::ServerTossGrenadeCosmetic_Implementation()
-{
-	if (Grenades == 0.f)return;
-	CombatState = ECombatState::ECS_TossingGrenade;
-	//Could definitely use a multicast RPC here instead of Rep Notify
-	TossGrenadeCosmetic();
-	Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
-	UpdateHUDGrenades();
 
-}
 void UWeaponComponent::UpdateHUDGrenades()
 {
+
 	StrykerPlayerController = StrykerPlayerController == nullptr ? Cast<AStrykerPlayerController>(PlayerCharacter->Controller) : StrykerPlayerController;
 	if (StrykerPlayerController)
 		StrykerPlayerController->SetGrenadeAmmo(Grenades);//Client RPC
 }
-void UWeaponComponent::TossGrenadeCosmetic()
-{
-	if (PlayerCharacter)
-	{
-		PlayerCharacter->PlayTossGrenadeMontage();
-		AttachActorToLeftHand(EquippedWeapon);
-		ShowAttachedGrenade(true);
-	}
-}
 
+void UWeaponComponent::ServerFinishSwappingWeapon_Implementation()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+}
 
 
 

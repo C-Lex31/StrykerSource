@@ -584,6 +584,14 @@ void AStrykerCharacter::PlayTossGrenadeMontage()
 		AnimInstance->Montage_Play(TossGrenadeMontage);
 	}
 }
+void AStrykerCharacter::PlayEquipWeaponMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && WeaponEquipMontage)
+	{
+		AnimInstance->Montage_Play(WeaponEquipMontage);
+	}
+}
 void AStrykerCharacter::PlayReloadMontage()
 {
 	if (WeaponComponent == nullptr || WeaponComponent->EquippedWeapon == nullptr) return;
@@ -844,7 +852,7 @@ void AStrykerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &AStrykerCharacter::EventFireStart);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AStrykerCharacter::EventFireStop);
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AStrykerCharacter::EventReload);
-		EnhancedInputComponent->BindAction(TossGrenadeAction, ETriggerEvent::Triggered, this, &AStrykerCharacter::EventTossGrenade);
+		EnhancedInputComponent->BindAction(TossGrenadeAction, ETriggerEvent::Started, this, &AStrykerCharacter::EventTossGrenade);
 	}
 }
 void AStrykerCharacter::InitializeCrosshair_Implementation()
@@ -1086,6 +1094,17 @@ void AStrykerCharacter::EventInteract()
 		if (WeaponComponent->CombatState == ECombatState::ECS_Unoccupied )
 			ServerEquip();	
 
+		bool bSwap = WeaponComponent->GetShouldSwapWeapons() &&
+			!HasAuthority() &&
+			WeaponComponent->CombatState == ECombatState::ECS_Unoccupied &&
+			OverlappedWeapon == nullptr;
+
+		if (bSwap)
+		{
+			PlayEquipWeaponMontage();
+			WeaponComponent->CombatState = ECombatState::ECS_EquipWeapon;
+			bFinishedSwapping = false;
+		}
 }
 
 void AStrykerCharacter::EventReload()

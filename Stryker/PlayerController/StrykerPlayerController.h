@@ -33,7 +33,7 @@ class STRYKER_API AStrykerPlayerController : public APlayerController
 	float CheckPingFrequency = 15.f;
 
 	UPROPERTY(EditAnywhere)
-	float HighPingThreshold = 60.f;
+	float HighPingThreshold = 80.f;
 
 	float PingAnimationRunningTime = 0.f;
 
