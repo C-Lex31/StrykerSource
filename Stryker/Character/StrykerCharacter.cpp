@@ -409,7 +409,7 @@ void AStrykerCharacter::CrosshairLogicUpdate()
 			if (LocalPC && LocalPC->GetGameHUD() && LocalPC->GetGameHUD()->ObstacleCrosshair)
 			{
 
-				GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, "CrosshairHasObstacle");
+				
 				UWidgetLayoutLibrary::ProjectWorldLocationToWidgetPosition(LocalPC, CrosshairLocation, ObstacleCrosshairLocation, false);
 				LocalPC->GetGameHUD()->ObstacleCrosshair->SetRenderOpacity(1.f);
 				Crosshair->SetRenderOpacity(0.2f);
@@ -932,6 +932,7 @@ void AStrykerCharacter::OnRep_OverlappedWeapon(AWeaponBase* LastWeapon)
 	}
 }
 
+
 //Called on Server Only from WeaponBase.cpp
 void AStrykerCharacter::SetOverlappingWeapon(AWeaponBase* Weapon)
 {
@@ -986,7 +987,7 @@ void AStrykerCharacter::ServerEquip_Implementation()
 		{
 			WeaponComponent->EquipWeapon(OverlappedWeapon);
 		}
-		else if (WeaponComponent->GetShouldSwapWeapons())
+		else if (WeaponComponent->GetShouldSwapWeapons() && IsLocallyControlled() && HasAuthority())
 		{
 			WeaponComponent->SwapWeapons();
 		}
@@ -994,6 +995,14 @@ void AStrykerCharacter::ServerEquip_Implementation()
 
 
 }
+void AStrykerCharacter::ServerSwap_Implementation()
+{
+	if (WeaponComponent)
+	{
+		WeaponComponent->SwapWeapons();
+	}
+}
+
 
 #pragma endregion Interaction
 
@@ -1101,6 +1110,8 @@ void AStrykerCharacter::EventInteract()
 
 		if (bSwap)
 		{
+			ServerSwap();
+			//WeaponComponent->bCanFire = true;
 			PlayEquipWeaponMontage();
 			WeaponComponent->CombatState = ECombatState::ECS_EquipWeapon;
 			bFinishedSwapping = false;

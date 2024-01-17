@@ -18,10 +18,10 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 		class AStrykerPlayerController* StrykerPlayerController;
 	    class AStrykerHUD* HUD;
 
-		UPROPERTY(ReplicatedUsing = OnRep_EquipWeapon )
+		UPROPERTY(VisibleAnywhere , BlueprintReadOnly , ReplicatedUsing = OnRep_EquipWeapon , meta=(AllowPrivateAccess="true"))
 		class AWeaponBase* EquippedWeapon; 
 
-		UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
+		UPROPERTY(VisibleAnywhere, BlueprintReadOnly ,ReplicatedUsing = OnRep_SecondaryWeapon, meta=(AllowPrivateAccess = "true"))
 		AWeaponBase* SecondaryWeapon;
 
 	    class AStrykerCharacter* PlayerCharacter;
@@ -66,13 +66,15 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 	/**
 	* Automatic fire
 	*/
-	FTimerHandle FireTimer;
+	
+	UPROPERTY(VisibleAnywhere)
 	bool bCanFire = true;
+
 	void StartFireTimer();
 	void FireTimerFinished();
 	bool CanFire();
 
-	UPROPERTY( ReplicatedUsing = OnRep_CombatState)
+	UPROPERTY( VisibleAnywhere ,ReplicatedUsing = OnRep_CombatState)
 	ECombatState CombatState = ECombatState::ECS_Unoccupied ;
 	UFUNCTION()
 	void OnRep_CombatState();
@@ -114,6 +116,7 @@ class STRYKER_API UWeaponComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UWeaponComponent();
+	FTimerHandle FireTimer;
 	friend class AStrykerCharacter ;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 	void EquipWeapon(AWeaponBase* WeaponToEquip);
@@ -128,8 +131,8 @@ public:
 //	FORCEINLINE float GetCrosshairShootingFactor() { return CrosshairShootingFactor; }
 	FORCEINLINE void SetHitTarget(FVector Target) { HitTarget = Target; }
 	FORCEINLINE int32 GetGrenadeCount() { return Grenades; }
-	FORCEINLINE bool GetShouldSwapWeapons() {return EquippedWeapon != nullptr && SecondaryWeapon != nullptr && !bIsAiming;}
 	FORCEINLINE bool GetLocallyReloading() { return bLocallyReloading; }
+	bool GetShouldSwapWeapons();
 	void Fire();
 	void Reload();
 	void TossGrenade();

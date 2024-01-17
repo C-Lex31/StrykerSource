@@ -134,6 +134,9 @@ class AStrykerCharacter : public ACharacter ,public ICrosshairInteractableInterf
 
 	UFUNCTION(Server , Reliable)
 	void ServerEquip();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSwap();
 	
 	#pragma region HealthAndElimination
 float MaxHealth = 100.f;

@@ -196,6 +196,7 @@ void UWeaponComponent::SwapWeapons()
 {
 	if (CombatState != ECombatState::ECS_Unoccupied || PlayerCharacter == nullptr || !PlayerCharacter->HasAuthority())return;
 
+	//bCanFire = true;
 	PlayerCharacter->PlayEquipWeaponMontage();
 	CombatState = ECombatState::ECS_EquipWeapon;
 	PlayerCharacter->SetFinishedSwapping(false);
@@ -213,6 +214,7 @@ void UWeaponComponent::EquipPrimaryWeapon(AWeaponBase* WeaponToEquip)
 	EquippedWeapon->SetOwner(PlayerCharacter);
 	EquippedWeapon->SetHUDAmmo();
 	UpdateCarriedAmmo();
+	CombatState = ECombatState::ECS_Unoccupied;
 	if (EquippedWeapon->GetIsEmpty())
 		Reload();
 
@@ -298,8 +300,14 @@ void UWeaponComponent::FireButtonPressed(bool bPressed)
 	}
 }
 
+bool UWeaponComponent::GetShouldSwapWeapons()
+{
+	return EquippedWeapon != nullptr && SecondaryWeapon != nullptr && !bIsAiming && !bFireButtonPressed && !bLocallyReloading ;
+}
+
 void UWeaponComponent::Fire()
 {
+
 	if (CanFire())
 	{
 		bCanFire = false;
@@ -320,7 +328,13 @@ void UWeaponComponent::Fire()
 				 break;
 			 }
 		}
-		StartFireTimer();
+	//	if (PlayerCharacter && PlayerCharacter->IsLocallyControlled() )
+			StartFireTimer();
+	}
+	else if (EquippedWeapon && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon->GetIsEmpty() )
+	{
+		
+		Reload();
 	}
 }
 void UWeaponComponent::FireProjectileWeapon()
@@ -360,6 +374,7 @@ void UWeaponComponent::Reload()
 {
 	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->GetIsFull() && !bLocallyReloading)
 	{
+
 		ServerReload();
 		HandleReload();
 		bLocallyReloading = true;
@@ -477,15 +492,32 @@ void UWeaponComponent::BP_TossGrenade()
 void UWeaponComponent::BP_FinishEquip()
 {
 	//if (PlayerCharacter && PlayerCharacter->HasAuthority())
-		//CombatState = ECombatState::ECS_Unoccupied;
+	//CombatState = ECombatState::ECS_Unoccupied;
+	ServerFinishSwappingWeapon();
+	//if (EquippedWeapon->GetIsEmpty())
+		//Reload();
 	if (PlayerCharacter)
 		PlayerCharacter->SetFinishedSwapping(true);
 	//if(PlayerCharacter && PlayerCharacter->HasAuthority())
-	ServerFinishSwappingWeapon();
+	//ServerFinishSwappingWeapon();
 }
 void UWeaponComponent::BP_EquipAttachWeapon()
 {
 	ServerEquipAttachWeapon();
+	AWeaponBase* temp = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = temp;
+
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_EquippedPrimary);
+	AttachActorToRightHand(EquippedWeapon);
+	EquippedWeapon->SetOwner(PlayerCharacter);
+	EquippedWeapon->SetHUDAmmo();
+	
+	//UpdateCarriedAmmo();
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToBackpack(SecondaryWeapon);
+
+	
 }
 void UWeaponComponent::ServerEquipAttachWeapon_Implementation()
 {
@@ -497,12 +529,20 @@ void UWeaponComponent::ServerEquipAttachWeapon_Implementation()
 	AttachActorToRightHand(EquippedWeapon);
 	EquippedWeapon->SetOwner(PlayerCharacter);
 	EquippedWeapon->SetHUDAmmo();
-	UpdateCarriedAmmo();
-	if (EquippedWeapon->GetIsEmpty())
-		Reload();
 
+	UpdateCarriedAmmo();
 	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
 	AttachActorToBackpack(SecondaryWeapon);
+
+//	if (EquippedWeapon->GetIsEmpty())
+		//Reload();
+}
+void UWeaponComponent::ServerFinishSwappingWeapon_Implementation()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+	//if (EquippedWeapon->GetIsEmpty())
+		//Reload();
+		
 }
 void UWeaponComponent::ServerTossGrenade_Implementation(const FVector_NetQuantize& Target)
 {
@@ -591,7 +631,7 @@ void UWeaponComponent::LocalToss(const FVector_NetQuantize& Target)
 
 void UWeaponComponent::StartFireTimer()
 {
-	if (EquippedWeapon == nullptr || PlayerCharacter == nullptr) return;
+	if (EquippedWeapon == nullptr || PlayerCharacter == nullptr || !(CombatState==ECombatState::ECS_Unoccupied)) return;
 	PlayerCharacter->GetWorldTimerManager().SetTimer(
 		FireTimer,
 		this,
@@ -602,25 +642,42 @@ void UWeaponComponent::StartFireTimer()
 
 void UWeaponComponent::FireTimerFinished()
 {
-	if (EquippedWeapon == nullptr) return;
+	if (EquippedWeapon == nullptr ) return;
 	bCanFire = true;
+	GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Green, "FIRETIMERFINISHED");
 	if (bFireButtonPressed && EquippedWeapon->bAutomatic)
 	{
 		Fire();
 	}
-	if (EquippedWeapon->GetIsEmpty())
+	else
 	{
-		Reload();
+		UKismetSystemLibrary::K2_ClearTimerHandle(GetWorld(), FireTimer);
+	}
+	if (EquippedWeapon->GetIsEmpty() && CombatState==ECombatState::ECS_Unoccupied)
+	{
+	//	GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Green, "FIRETIMERFINISHED");
+		//Reload();
 	}
 }
 
 bool UWeaponComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
+	
 	if (!EquippedWeapon->GetIsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
+	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString(TEXT("%s"), bCanFire));
 	if (bLocallyReloading) return false;
+	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString(TEXT("%s"), bCanFire));
+	if (!(CombatState == ECombatState::ECS_Unoccupied))return false;
+	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Black, FString(TEXT("%s"), bCanFire));
+	if (EquippedWeapon->GetIsEmpty()) return false;
+	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString(TEXT("%s"), bCanFire));
+	if (!bCanFire) return false;
+	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::White, FString(TEXT("%s"), bCanFire));
 
-	return !EquippedWeapon->GetIsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;
+	return true;
+	//return !EquippedWeapon->GetIsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied;
+
 }
 
 void UWeaponComponent::OnRep_CombatState()
@@ -743,10 +800,7 @@ void UWeaponComponent::UpdateHUDGrenades()
 		StrykerPlayerController->SetGrenadeAmmo(Grenades);//Client RPC
 }
 
-void UWeaponComponent::ServerFinishSwappingWeapon_Implementation()
-{
-	CombatState = ECombatState::ECS_Unoccupied;
-}
+
 
 
 
